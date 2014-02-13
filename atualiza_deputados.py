@@ -1,31 +1,43 @@
+#-*- coding: utf-8 -*-
+#!/usr/bin/python3
+
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import csv
 
-#importa a atual lista de deputados, checa se há algum deputado novo pelo ID e salva os novos no mesmo arquivo .csv se houver
-def atualiza_deputados():
-    #verifica se já há o arquivo de deputados local. se houver, pega o arquivo local de deputados e guarda a primeira coluna (id) em uma lista
+#checa se há arquivo de deputados no diretório local. se houver, ele já retorna esse arquivo
+def existe_arquivo():
     try: 
-        mycsv = csv.reader(open("deputados.csv","r"))
-        dep_antigos = []
-        next(mycsv, None) #ignora o cabeçalho
-        for row in mycsv:
-            dep_antigos.append(row[0])
-                
-    except FileNotFoundError: #se o arquivo não existir, cria um zerado só com o cabeçalho
-        output  = open("deputados.csv", "w", encoding='UTF8')
-        writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(["id","nome","partido"])
-        output.close()
-        dep_antigos = []
-    
-    #agora faz a consulta na API da Câmara pela lista atual de deputados       
+        arquivo = csv.reader(open("deputados.csv","r"))
+        return arquivo
+    except FileNotFoundError:
+        return False
+
+#cria um arquivo vazio de deputados caso não exista no diretório local
+def cria_arquivo_vazio():
+    output  = open("deputados.csv", "w", encoding='UTF8')
+    writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+    writer.writerow(["id","nome","partido"])
+    output.close()
+
+#retorna uma lista com os códigos de todos os deputados que estão no arquivo local
+def busca_deputados_antigos(arquivo):
+    dep_antigos = []
+    next(arquivo, None) #ignora o cabeçalho
+    for row in arquivo:
+        dep_antigos.append(row[0]) #a primeira coluna é a do ID
+    return dep_antigos
+
+#consulta a API da Câmara para os deputados e retorna o XML só com os campos de deputado
+def consulta_API_camara():
     url = "http://www.camara.gov.br/sitcamaraws/deputados.asmx/ObterDeputados"
     connection = urlopen(url)
     data = connection.read()
     bs = BeautifulSoup(data)
-    deputados = bs.findAll("deputado")
-                    
+    return bs.findAll("deputado")
+
+#de acordo com a consulta na API, grava os novos deputados que não estiverem já listados no csv antigo
+def adiciona_novos_deputados(deputados,dep_antigos):
     #prepara o arquivo de saída
     output  = open("deputados.csv", "a", encoding='UTF8')
     writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
@@ -36,4 +48,20 @@ def atualiza_deputados():
             writer.writerow([d.idparlamentar.string,d.nome.string,d.partido.string])
     output.close()
 
+#função que articula todas as anteriores e faz todo o processo de atualização
+def atualiza_deputados():
+    
+    dep_antigos = []
+    arquivo = existe_arquivo()
+
+    if (arquivo):
+        dep_antigos = busca_deputados_antigos(arquivo)
+    else:
+        cria_arquivo_vazio()
+    
+    deputados = consulta_API_camara()
+    
+    adiciona_novos_deputados(deputados,dep_antigos)
+                    
+    
 atualiza_deputados()
