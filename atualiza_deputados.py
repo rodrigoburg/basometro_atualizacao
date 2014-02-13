@@ -29,7 +29,7 @@ def busca_deputados_antigos(arquivo):
     return dep_antigos
 
 #consulta a API da Câmara para os deputados e retorna o XML só com os campos de deputado
-def consulta_API_camara():
+def consulta_API_deputados():
     url = "http://www.camara.gov.br/sitcamaraws/deputados.asmx/ObterDeputados"
     connection = urlopen(url)
     data = connection.read()
@@ -59,7 +59,7 @@ def atualiza_deputados():
     else:
         cria_arquivo_vazio()
     
-    deputados = consulta_API_camara()
+    deputados = consulta_API_deputados()
     
     adiciona_novos_deputados(deputados,dep_antigos)
                     
