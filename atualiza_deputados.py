@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import csv
 
 #checa se há arquivo de deputados no diretório local. se houver, ele já retorna esse arquivo
-def existe_arquivo():
+def existe_arquivo_deputados():
     try: 
         arquivo = csv.reader(open("deputados.csv","r"))
         return arquivo
@@ -52,7 +52,7 @@ def adiciona_novos_deputados(deputados,dep_antigos):
 def atualiza_deputados():
     
     dep_antigos = []
-    arquivo = existe_arquivo()
+    arquivo = existe_arquivo_deputados()
 
     if (arquivo):
         dep_antigos = busca_deputados_antigos(arquivo)
