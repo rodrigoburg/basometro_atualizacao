@@ -10,8 +10,10 @@ def existe_arquivo_deputados():
     try:
         with open("deputados.csv","r") as file:
             arquivo = csv.reader(file)
-            return arquivo
+            print("Arquivo de deputados no diretório local foi encontrado.")
+            return True
     except FileNotFoundError:
+        print("Não há arquivo de deputados no diretório local. Criando arquivo em branco...")
         return False
 
 #cria um arquivo vazio de deputados caso não exista no diretório local
@@ -21,12 +23,15 @@ def cria_arquivo_vazio():
         writer.writerow(["id","nome","partido"])
 
 #retorna uma lista com os códigos de todos os deputados que estão no arquivo local
-def busca_deputados_antigos(arquivo):
-    dep_antigos = []
-    next(arquivo, None) #ignora o cabeçalho
-    for row in arquivo:
-        dep_antigos.append(row[0]) #a primeira coluna é a do ID
-    return dep_antigos
+def busca_deputados_antigos():
+    with open("deputados.csv","r") as file:
+        arquivo = csv.reader(file)
+        dep_antigos = []            
+        next(arquivo, None) #ignora o cabeçalho
+        for row in arquivo:
+            dep_antigos.append(row[0]) #a primeira coluna é a do ID
+        print("Há "+str(len(dep_antigos))+" deputados registrados no arquivo salvo.")
+        return dep_antigos
 
 #consulta a API da Câmara para os deputados e retorna o XML só com os campos de deputado
 def consulta_API_deputados():
@@ -39,6 +44,7 @@ def consulta_API_deputados():
 #de acordo com a consulta na API, grava os novos deputados que não estiverem já listados no csv antigo
 def adiciona_novos_deputados(deputados,dep_antigos):
     #prepara o arquivo de saída
+    contador = 0
     with open("deputados.csv", "a", encoding='UTF8') as output:
         writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
 
@@ -46,26 +52,19 @@ def adiciona_novos_deputados(deputados,dep_antigos):
         for d in deputados:
             if d.idparlamentar.string not in dep_antigos:
                 writer.writerow([d.idparlamentar.string,d.nome.string,d.partido.string])
+                contador += 1
+                
+    print("Foram adicionados "+str(contador)+" deputados no arquivo local.")
 
 #função que articula todas as anteriores e faz todo o processo de atualização
 def atualiza_deputados():
-
     dep_antigos = []
     arquivo = existe_arquivo_deputados()
-
     if (arquivo):
-        dep_antigos = busca_deputados_antigos(arquivo)
+        dep_antigos = busca_deputados_antigos()
     else:
         cria_arquivo_vazio()
-<<<<<<< HEAD
-    
     deputados = consulta_API_deputados()
-    
-=======
-
-    deputados = consulta_API_camara()
-
->>>>>>> 89b60ae611554b752acd187753b66e1e717f3a94
     adiciona_novos_deputados(deputados,dep_antigos)
 
 
