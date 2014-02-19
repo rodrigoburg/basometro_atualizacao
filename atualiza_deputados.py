@@ -45,8 +45,8 @@ def salva_deputados(deputados):
             # Se não existe, ele será automaticamente criado, daí basta
             # adicionarmos o "header" da primeira linha.
         arquivo.seek(0)  # garante que a leitura está no começo do arquivo
-        primeiro_caractere = arquivo.readline()
-        if not primeiro_caractere:
+        primeira_linha = arquivo.readline()
+        if not primeira_linha:
             # Escreve a primeira linha com o cabeçalho caso o
                 # arquivo esteja vazio.
             writer.writerow(["id", "nome", "partido"])
