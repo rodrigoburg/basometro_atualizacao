@@ -172,10 +172,13 @@ def faz_consulta(datas):
         todos_partidos += list(r["bancada"])
     todos_partidos = set(todos_partidos)
     
+    #arruma as datas para o arquivo de saída
+    novas_datas = [d[0] + "-" + d[1] for d in datas]
+    
     #escreve o arquivo de saída
     with open("resultado.csv", "w+", encoding='UTF8') as saida:
         linha = []
-        header = ["bancada"] + datas
+        header = ["bancada"] + novas_datas
         escreve_res = csv.writer(saida, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
         escreve_res.writerow(header)
         #adiciona cada um dos partidos que foram listados no período na primeira coluna do arquivo e o resultado para cada intervalo nas outras colunas
