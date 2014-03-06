@@ -5,7 +5,7 @@
 
 #A função principal que articula todas as outras é a faz_consulta(datas). O parâmetro "datas" deve ser uma lista contendo ao menos uma outra lista com a data de início e de fim do intervalo em que a fidelidade será calculada. Essa lista "datas" pode ter inúmeras listas com o intervalo dentro delas - o resultado final será mostrado de acordo com esses períodos passados como parâmetro. A única observação é que o script não funcionará se forem usados intervalos para os quais não existem registros no arquivo de orientações. 
 
-#O resultado do script é dividido em duas partes: 1) o log que é impresso após a execução, mostrando uma tabela com as bancadas e os valores absolutos e porcentuais para a fidelidade em cada um dos intervalos; e 2) um arquivo "resultado.csv", onde é apresentada a fidelidade todas as bancadas que apareceram nos intervalos pesquisados (as bancadas são as linhas e os períodos as colunas)
+#O resultado do script é dividido em duas partes: 1) o log que é impresso após a execução, mostrando uma tabela com as bancadas e os valores absolutos e porcentuais para a fidelidade em cada um dos intervalos; e 2) um arquivo "analise_orientacoes.csv", onde é apresentada a fidelidade todas as bancadas que apareceram nos intervalos pesquisados (as bancadas são as linhas e os períodos as colunas)
 
 #O script calcula a fidelidade seguindo os seguintes parâmetros: 1) se o governo não orientou a votação, ela não entra no cálculo; 2) se o governo orientou a votação como "Liberado", ela também não entra no cálculo; 3) se o governo orientou "sim", "não" ou "obstrução", a bancada é fiel se ela orientar exatamente a mesma coisa. Esta lógica pode ser modificada na função "testa_voto" neste arquivo
 
@@ -26,9 +26,12 @@ def pega_orientacoes():
             cod_votacao = []
             bancada = []
             orientacao = []
+            data = []
+            
             for row in arquivo:
                 #o código da votação usado por este script para identicar cada uma delas é o código do projeto + a data da sua votação + a hora dessa votação (fazemos isso para diferenciar mais de uma votação que pode existir para cada projeto)
-                cod_votacao.append(row[0]+"-"+row[1]+"-"+row[2]) 
+                cod_votacao.append(row[0])
+                data.append(row[1]) 
                 bancada.append(row[3])
                 orientacao.append(row[4])         
             
@@ -41,31 +44,43 @@ def pega_orientacoes():
                     orientacoes[cod_votacao[i]]["bancadas"] = []
                     orientacoes[cod_votacao[i]]["orientacoes"] = []
                 
-                #descobre se a bancada em questão é composta por mais de um partido (ex: PrPtbPsc ou Pr/Ptb/Psc) ou se tem a expressão REPR. antes do nome do partido
+                #descobre se a bancada em questão é composta por mais de um partido (ex: PrPtbPsc ou Pr/Ptb/Psc) 
                 bloco = re.findall('P[a-z]+',bancada[i])
-                repres = bancada[i].upper().split("REPR.")
                 bloco_antigo = bancada[i].split("/")    
+                bancada_invalida = ["APOIO AO GOVERNO","MAIORIA","MINORIA"]
+                
+                orientacoes[cod_votacao[i]]["data"] = data[i]
                 
                 #adiciona a bancada e a orientação de cada votação no dicionário principal de acordo com as divisões testadas acima
                 if bloco:
                     for b in bloco:
                         orientacoes[cod_votacao[i]]["bancadas"].append(b.upper())
                         orientacoes[cod_votacao[i]]["orientacoes"].append(orientacao[i])
-                elif len(repres)!=1:
-                    orientacoes[cod_votacao[i]]["bancadas"].append(repres[1].upper())
-                    orientacoes[cod_votacao[i]]["orientacoes"].append(orientacao[i])
-                elif bloco_antigo:
+                elif len(bloco_antigo)!=1:
                     for b in bloco_antigo:
                         orientacoes[cod_votacao[i]]["bancadas"].append(b.upper())
                         orientacoes[cod_votacao[i]]["orientacoes"].append(orientacao[i])                    
                 else:
-                    orientacoes[cod_votacao[i]]["bancadas"].append(bancada[i].upper())
-                    orientacoes[cod_votacao[i]]["orientacoes"].append(orientacao[i])
+                    if bancada[i].upper() not in bancada_invalida:
+                        orientacoes[cod_votacao[i]]["bancadas"].append(conserta_bancada(bancada[i]))
+                        orientacoes[cod_votacao[i]]["orientacoes"].append(conserta_bancada(orientacao[i]))
                     
     except FileNotFoundError:
         print("Não há arquivo de orientações. Favor fazer a consulta na API da Câmara primeiro")
     
     return orientacoes
+
+#arruma algumas inconsistências no nome das bancadas
+def conserta_bancada(bancada):
+    repres = bancada.upper().split("REPR.")
+    if bancada.upper() == "SOLIDARIED":
+        return "SDD"
+    elif bancada.upper() == "PFL":
+        return "DEM"
+    elif len(repres)!=1:
+        return repres[1].upper()
+    else:
+        return bancada.upper()
 
 #retira do dicionário os dados das votações que estão fora do período a ser analisado
 def retira_orientacoes(orientacoes, data_inicio,data_fim):
@@ -74,8 +89,7 @@ def retira_orientacoes(orientacoes, data_inicio,data_fim):
     #loop cria uma lista com todos os códigos das votações que estão fora do intervalo de análise
     for key in orientacoes:
         #o hífen separa a parte do código da votação que representa a data em que ela foi decidida no plenário
-        data = key.split("-")[1]
-        data = datetime.strptime(data,'%d/%m/%Y')
+        data = datetime.strptime(orientacoes[key]["data"],'%d/%m/%Y')
         if not data_inicio <= data <= data_fim:
             votacoes_para_retirar.append(key)
         if "GOV." not in orientacoes[key]["bancadas"]:
@@ -92,7 +106,7 @@ def retira_orientacoes(orientacoes, data_inicio,data_fim):
 def testa_voto(voto_gov,voto_bancada):
     if voto_gov == "Liberado":
         return False
-    elif voto_gov == voto_bancada:
+    elif voto_gov.upper() == voto_bancada.upper():
         return 1
     else:
         return 2
@@ -116,7 +130,7 @@ def calcula_fidelidade_governo(orientacoes):
             
             #preenche os dicionários dos resultados
             voto = testa_voto(voto_gov,orientacoes[o]["orientacoes"][i])
-            
+
             #se a votação é válida
             if voto:
                 #adiciona 1 na contagem de votações
@@ -124,7 +138,6 @@ def calcula_fidelidade_governo(orientacoes):
                 #se governo e bancada votaram iguais, adiciona 1 também na contagem de votos 
                 if voto == 1:
                     contagem_votos[orientacoes[o]["bancadas"][i]] += 1                
-    
     return contagem_votos,contagem_votacoes
 
 #pega os dicionários de votos e votações e retorna um dataframe com eles
@@ -174,7 +187,7 @@ def faz_consulta(datas):
     novas_datas = [d[0] + "-" + d[1] for d in datas]
     
     #escreve o arquivo de saída
-    with open("resultado.csv", "w+", encoding='UTF8') as saida:
+    with open("analise_orientacoes.csv", "w+", encoding='UTF8') as saida:
         linha = []
         header = ["bancada"] + novas_datas
         escreve_res = csv.writer(saida, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
@@ -188,35 +201,35 @@ def faz_consulta(datas):
 
 #lista de datas que usamos para chamar a função principal faz_consulta(datas)            
 datas = [
-  ["01/01/1999","30/06/1999"],
-  ["01/07/1999","31/12/1999"],
-  ["01/01/2000","30/06/2000"],
-  ["01/07/2000","31/12/2000"],
-  ["01/01/2001","30/06/2001"],
-  ["01/07/2001","31/12/2001"],
-  ["01/01/2002","30/06/2002"],
-  ["01/07/2002","31/12/2002"],
-  ["01/01/2003","30/06/2003"],
-  ["01/07/2003","31/12/2003"],
-  ["01/01/2004","30/06/2004"],
-  ["01/07/2004","31/12/2004"],
-  ["01/01/2005","30/06/2005"],
-  ["01/07/2005","31/12/2005"],
-  ["01/01/2006","30/06/2006"],
-  ["01/07/2006","31/12/2006"],
-  ["01/01/2007","30/06/2007"],
-  ["01/07/2007","31/12/2007"],
-  ["01/01/2008","30/06/2008"],
-  ["01/07/2008","31/12/2008"],
-  ["01/01/2009","30/06/2009"],
-  ["01/07/2009","31/12/2009"],
-  ["01/01/2010","30/06/2010"],
-  ["01/07/2010","31/12/2010"],
-  ["01/01/2011","30/06/2011"],
-  ["01/07/2011","31/12/2011"],
-  ["01/01/2012","30/06/2012"],
-  ["01/07/2012","31/12/2012"],
-  ["01/01/2013","30/06/2013"],
+    ["01/01/1999","30/06/1999"],
+    ["01/07/1999","31/12/1999"],
+    ["01/01/2000","30/06/2000"],
+    ["01/07/2000","31/12/2000"],
+    ["01/01/2001","30/06/2001"],
+    ["01/07/2001","31/12/2001"],
+    ["01/01/2002","30/06/2002"],
+    ["01/07/2002","31/12/2002"],
+    ["01/01/2003","30/06/2003"],
+    ["01/07/2003","31/12/2003"],
+    ["01/01/2004","30/06/2004"],
+    ["01/07/2004","31/12/2004"],
+    ["01/01/2005","30/06/2005"],
+    ["01/07/2005","31/12/2005"],
+    ["01/01/2006","30/06/2006"],
+    ["01/07/2006","31/12/2006"],
+    ["01/01/2007","30/06/2007"],
+    ["01/07/2007","31/12/2007"],
+    ["01/01/2008","30/06/2008"],
+    ["01/07/2008","31/12/2008"],
+    ["01/01/2009","30/06/2009"],
+    ["01/07/2009","31/12/2009"],
+    ["01/01/2010","30/06/2010"],
+    ["01/07/2010","31/12/2010"],
+    ["01/01/2011","30/06/2011"],
+    ["01/07/2011","31/12/2011"],
+    ["01/01/2012","30/06/2012"],
+    ["01/07/2012","31/12/2012"],
+    ["01/01/2013","30/06/2013"],
     ["01/07/2013","31/12/2013"]
     ]
     

@@ -31,7 +31,6 @@ def existe_arquivo_proposicoes():
     #    ele já retorna esse arquivo"""
     try:
         with open("proposicoes.csv", "r") as file:
-            print("Arquivo de votações no diretório local foi encontrado.")
             return file
     except IOError:
         print("Não há arquivo de votações no diretório local.")
@@ -64,7 +63,6 @@ def existe_arquivo_votos():
     #""" Checa se há arquivo de votos no diretório local"""
     try:
         with open("votos.csv", "r") as arquivo:
-            print("Arquivo de votos no diretório local foi encontrado.")
             return arquivo
     except IOError:
         print("Não há arquivo de votos no diretório local.")
@@ -241,7 +239,7 @@ def adiciona_novas_proposicoes(proposicoes, prop_antigas, ano):
                 #loop para adicionar todas as votacoes no mesmo ano
                 for i in range(prop["num_votacoes"]):
                     contador += 1
-                    escreve_prop.writerow([prop["codigo"]+"_"+str(i),
+                    escreve_prop.writerow([prop["codigo"]+"_"+str(i)+"_"+prop["data_votacao"][i - 1]+"_"+prop["hora_votacao"][i - 1],
                                            prop["tipo"],
                                            prop["numero"],
                                            prop["ano"],
@@ -257,7 +255,7 @@ def adiciona_novas_proposicoes(proposicoes, prop_antigas, ano):
                     try:
                         for d in range(len(prop["votos"][i - 1]["voto"])):
                             escreve_voto.writerow(
-                                [prop["codigo"]+"_"+str(i),
+                                [prop["codigo"]+"_"+str(i)+"_"+prop["data_votacao"][i - 1]+"_"+prop["hora_votacao"][i - 1],
                                  prop["votos"][i - 1]["idecadastro"][d],
                                  prop["votos"][i - 1]["nome"][d],
                                  prop["votos"][i - 1]["partido"][d],
@@ -269,7 +267,7 @@ def adiciona_novas_proposicoes(proposicoes, prop_antigas, ano):
                     try:
                         for o in range(len(prop["orientacoes"][i-1])):
                             escreve_orientacao.writerow(
-                            [prop["codigo"]+"_"+ str(i),
+                            [prop["codigo"]+"_"+str(i)+"_"+prop["data_votacao"][i - 1]+"_"+prop["hora_votacao"][i - 1],
                             prop["data_votacao"][i-1],
                             prop["hora_votacao"][i-1],
                             list(prop["orientacoes"][i-1].keys())[o],
