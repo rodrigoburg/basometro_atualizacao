@@ -7,7 +7,7 @@
 
 #O resultado do script é dividido em duas partes: 1) o log que é impresso após a execução, mostrando uma tabela com as bancadas e os valores absolutos e porcentuais para a fidelidade em cada um dos intervalos; e 2) um arquivo "resultado.csv", onde é apresentada a fidelidade todas as bancadas que apareceram nos intervalos pesquisados (as bancadas são as linhas e os períodos as colunas)
 
-#O script calcula a fidelidade seguindo os seguintes parâmetros: 1) se o governo não orientou a votação, ela não entra no cálculo; 2) se o governo orientou a votação como "Liberado", ela também não entra no cálculo; 2) se o governo orientou "Obstrução", a bancada é fiel se orientar "não" ou "obstrução"; e 4) se o governo orientar "sim ou não", a bancada é fiel se ela orientar exatamente a mesma coisa. Esta lógica pode ser modificada na função "testa_voto" neste arquivo
+#O script calcula a fidelidade seguindo os seguintes parâmetros: 1) se o governo não orientou a votação, ela não entra no cálculo; 2) se o governo orientou a votação como "Liberado", ela também não entra no cálculo; 3) se o governo orientou "sim", "não" ou "obstrução", a bancada é fiel se ela orientar exatamente a mesma coisa. Esta lógica pode ser modificada na função "testa_voto" neste arquivo
 
 #OBS: os dados de orientações coletados pelo atualiza_proposições.py só estão disponíveis pela Câmara dos Deputados de 1998 em diante.
 
@@ -68,7 +68,7 @@ def pega_orientacoes():
     return orientacoes
 
 #retira do dicionário os dados das votações que estão fora do período a ser analisado
-def retira_orientacoes(orientacoes,data_inicio,data_fim):
+def retira_orientacoes(data_inicio,data_fim):
     votacoes_para_retirar = []
     
     #loop cria uma lista com todos os códigos das votações que estão fora do intervalo de análise
@@ -89,11 +89,9 @@ def retira_orientacoes(orientacoes,data_inicio,data_fim):
     return orientacoes
 
 #função que retorna False se a orientação deve ser desconsiderada, 1 se a bancada orientou a favor do governo e 2 se orientou contra
-def testa_voto(voto_gov,voto_bancada):
+def testa_voto(cod,voto_gov,voto_bancada):
     if voto_gov == "Liberado":
         return False
-    elif voto_gov == "Obstrução" and (voto_bancada == "Não" or voto_bancada == "Obstrução"):
-        return 1
     elif voto_gov == voto_bancada:
         return 1
     else:
