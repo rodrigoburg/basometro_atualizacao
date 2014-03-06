@@ -68,7 +68,7 @@ def pega_orientacoes():
     return orientacoes
 
 #retira do dicionário os dados das votações que estão fora do período a ser analisado
-def retira_orientacoes(data_inicio,data_fim):
+def retira_orientacoes(orientacoes, data_inicio,data_fim):
     votacoes_para_retirar = []
     
     #loop cria uma lista com todos os códigos das votações que estão fora do intervalo de análise
@@ -89,7 +89,7 @@ def retira_orientacoes(data_inicio,data_fim):
     return orientacoes
 
 #função que retorna False se a orientação deve ser desconsiderada, 1 se a bancada orientou a favor do governo e 2 se orientou contra
-def testa_voto(cod,voto_gov,voto_bancada):
+def testa_voto(voto_gov,voto_bancada):
     if voto_gov == "Liberado":
         return False
     elif voto_gov == voto_bancada:
