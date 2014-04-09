@@ -24,6 +24,8 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import csv
+import time
+from datetime import datetime as dt
 
 
 def existe_arquivo_proposicoes():
@@ -90,18 +92,17 @@ def busca_proposicoes_antigas(ano):
 
     prop_antigas = []
     with open("proposicoes.csv", "r") as file:
-        arquivo = csv.reader(file)
+        arquivo = csv.reader(file,delimiter = ";")
         next(arquivo, None)  # ignora o cabeçalho
         for row in arquivo:
             # só adiciona na lista as do mesmo ano que está sendo atualizado
-            if row[4][-4:] == ano:
+            if row[0][0:2] == ano[2:4]:
                 # a primeira coluna é a do codigo
                 prop_antigas.append(row[0])
         print("Há " + str(len(prop_antigas)) +
               " votações de " + str(ano) +
               " no arquivo salvo.")
         return prop_antigas
-
 
 def pega_todas_proposicoes(ano):
     # Função que busca o API da Câmara e retorna o XML
@@ -110,7 +111,12 @@ def pega_todas_proposicoes(ano):
     connection = urlopen(url)
     data = connection.read()
     bs = BeautifulSoup(data)
-    return bs.findAll("proposicao")
+    proposicoes = bs.findAll("proposicao")
+    lista_props = []
+    for p in proposicoes:
+        if p.codproposicao.string not in lista_props:
+            lista_props.append(p.codproposicao.string)
+    return lista_props
 
 
 def obter_dados_proposicao(prop):
@@ -150,7 +156,6 @@ def pega_dados_API_votacoes(prop):
         return prop
     bs = BeautifulSoup(data)
     votacoes = bs.findAll("votacao")
-
     prop["num_votacoes"] = 0
     prop["data_votacao"] = []
     prop["hora_votacao"] = []
@@ -198,6 +203,25 @@ def pega_dados_API_votacoes(prop):
                 pass
     return prop
 
+def cria_novo_codigo(data_votacao,hora_votacao,codigo,resumo):    
+    #cria código para a data e hora
+    data = data_votacao.split("/")
+    codigo_data = data[2][2:4] + "%02d" % int(data[1]) + "%02d" % int(data[0]) + hora_votacao.replace(":","")
+                    
+    #normaliza o número de caracteres em 8 para o código normal da proposição
+    codigo_codigo = "%07d" % int(codigo)
+    
+    #cria código para o resumo (número que representa matematicamente o
+    #resumo para diferenciar as votações registradas na mesma hora)
+    tamanho = len(resumo)
+    if tamanho == 0:
+        codigo_resumo = "000"
+    else:
+        codigo_resumo = "%03d" % int((ord(resumo[int(tamanho/2)]) + ord(resumo[int(tamanho/3)]) + ord(resumo[int(tamanho/4)])) / 3)
+    
+    #junta os códigos
+    return codigo_data + codigo_codigo + codigo_resumo
+    
 
 def adiciona_novas_proposicoes(proposicoes, prop_antigas, ano):
     #"""De acordo com a consulta na API, grava as novas proposicoes
@@ -211,70 +235,71 @@ def adiciona_novas_proposicoes(proposicoes, prop_antigas, ano):
         
         escreve_prop = csv.writer(
             prop_saida,
-            delimiter=',',
+            delimiter=';',
             quotechar='"',
             quoting=csv.QUOTE_ALL)
         escreve_voto = csv.writer(
             voto_saida,
-            delimiter=',',
+            delimiter=';',
             quotechar='"',
             quoting=csv.QUOTE_ALL)
         escreve_orientacao = csv.writer(
             orientacao_saida,
-            delimiter=',', 
+            delimiter=';', 
             quotechar='"', 
             quoting=csv.QUOTE_ALL)
         
 
         #loop que escreve as votações, votos e orientações
         for p in proposicoes:
-
-            #se o id não estiver na lista atual,
-            #adicione uma nova linha com os seus dados
-            if p.codproposicao.string not in prop_antigas:
-                prop["ano_votacao"] = ano
-                prop["codigo"] = p.codproposicao.string
-                prop = obter_dados_proposicao(prop)
-
-                #loop para adicionar todas as votacoes no mesmo ano
-                for i in range(prop["num_votacoes"]):
-                    contador += 1
-                    escreve_prop.writerow([prop["codigo"]+"_"+str(i)+"_"+prop["data_votacao"][i - 1]+"_"+prop["hora_votacao"][i - 1],
-                                           prop["tipo"],
-                                           prop["numero"],
-                                           prop["ano"],
-                                           prop["data_votacao"][i - 1],
-                                           prop["hora_votacao"][i - 1],
-                                           prop["ementa"],
-                                           prop["resumo"][i - 1],
-                                           prop["orientacao_governo"][i - 1],
-                                           prop["num_votacoes"]])
+            prop["codigo"] = p
+            prop["ano_votacao"] = ano
+            prop = obter_dados_proposicao(prop)
+            
+            #para cada uma das votações registradas
+            for i in range(prop["num_votacoes"]):
+                #cria o código para ver se a votação já foi registrada antess    
+                novo_codigo = cria_novo_codigo(prop["data_votacao"][i],prop["hora_votacao"][i],prop["codigo"],prop["resumo"][i])
+                
+                #se não é repetido
+                if novo_codigo not in prop_antigas:
+                    #se existe orientação do governo
+                    if prop["orientacao_governo"][i] in ["Sim","Não"]:
+                        prop_antigas.append(novo_codigo)
+                        contador += 1
+                        escreve_prop.writerow([novo_codigo,
+                                               novo_codigo[0:6],
+                                               prop["hora_votacao"][i] + ":00",
+                                               prop["orientacao_governo"][i],
+                                               prop["tipo"],
+                                               prop["numero"],
+                                               prop["ano"],
+                                               prop["ementa"],
+                                               prop["resumo"][i]])
 
                     #loop para adicionar uma linha para cada
                     # deputado no arquivo de votos
-                    try:
-                        for d in range(len(prop["votos"][i - 1]["voto"])):
-                            escreve_voto.writerow(
-                                [prop["codigo"]+"_"+str(i)+"_"+prop["data_votacao"][i - 1]+"_"+prop["hora_votacao"][i - 1],
-                                 prop["votos"][i - 1]["idecadastro"][d],
-                                 prop["votos"][i - 1]["nome"][d],
-                                 prop["votos"][i - 1]["partido"][d],
-                                 prop["votos"][i - 1]["voto"][d]])
-                    except:
-                        pass
+                        try:
+                            for d in range(len(prop["votos"][i - 1]["voto"])):
+                                escreve_voto.writerow(
+                                    [novo_codigo,
+                                     prop["votos"][i]["nome"][d].upper(),
+                                     prop["votos"][i]["voto"][d].upper(),
+                                     prop["votos"][i]["partido"][d]])
+                        except:
+                            pass
                     
                     #loop para adicionar orientações no arquivo de orientações
-                    try:
-                        for o in range(len(prop["orientacoes"][i-1])):
-                            escreve_orientacao.writerow(
-                            [prop["codigo"]+"_"+str(i)+"_"+prop["data_votacao"][i - 1]+"_"+prop["hora_votacao"][i - 1],
-                            prop["data_votacao"][i-1],
-                            prop["hora_votacao"][i-1],
-                            list(prop["orientacoes"][i-1].keys())[o],
-                            list(prop["orientacoes"][i-1].values())[o]])
-                    except:
-                        pass        
-                    
+                        try:
+                            for o in range(len(prop["orientacoes"][i-1])):
+                                escreve_orientacao.writerow(
+                                [novo_codigo,
+                                prop["data_votacao"][i],
+                                prop["hora_votacao"][i],
+                                list(prop["orientacoes"][i].keys())[o],
+                                list(prop["orientacoes"][i].values())[o]])
+                        except:
+                            pass                            
 
     print("Foram adicionadas " + str(contador) + " votações no arquivo local.\n")
 
@@ -297,19 +322,4 @@ def obter_proposicoes(ano):
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
-obter_proposicoes("1998")
-obter_proposicoes("1999")
-obter_proposicoes("2000")
-obter_proposicoes("2001")
-obter_proposicoes("2002")
-obter_proposicoes("2003")
-obter_proposicoes("2004")
-obter_proposicoes("2005")
-obter_proposicoes("2006")
-obter_proposicoes("2007")
-obter_proposicoes("2008")
-obter_proposicoes("2009")
-obter_proposicoes("2010")
-obter_proposicoes("2011")
-obter_proposicoes("2012")
-obter_proposicoes("2013")
+obter_proposicoes("2014")
