@@ -16,7 +16,7 @@ def limpar_votos():
     votos["POLITICO"][votos.POLITICO == "MANUELA D`AVILA"] = "MANUELA DAVILA"
     votos["POLITICO"][votos.POLITICO == "BERNARDO SANTANA DE VASCONCELLO"] = "BERNARDO SANTANA DE VASCONCELLOS"
     votos["POLITICO"][votos.POLITICO == "PROFESSORA DORINHA SEABRA REZENDEDE"] = "PROFESSORA DORINHA SEABRA REZENDE"    
-    votos.to_csv("votos.csv",sep=";",index_col=None)
+    votos.to_csv("votos.csv",sep=";",index_col=False)
     
 def testa_voto():
     votos = read_csv("votos.csv",sep=";")

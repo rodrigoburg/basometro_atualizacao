@@ -140,9 +140,9 @@ def pega_dados_API_proposicao(prop):
     # em que ela tiver sido atualizada
     if "NOVA EMENTA:" in bs.ementa.string:
         ementa = bs.ementa.string.split("NOVA EMENTA:")
-        prop["ementa"] = ementa[1].strip()
+        prop["ementa"] = ementa[1].strip().replace("\"","\'")
     else:
-        prop["ementa"] = bs.ementa.string.strip()
+        prop["ementa"] = bs.ementa.string.strip().replace("\"","\'")
     return prop
 
 
@@ -172,7 +172,7 @@ def pega_dados_API_votacoes(prop):
             prop["num_votacoes"] += 1
             prop["data_votacao"].append(v["data"])
             prop["hora_votacao"].append(v["hora"])
-            prop["resumo"].append(v["resumo"].strip())
+            prop["resumo"].append(v["resumo"].strip().replace("\"","\'"))
 
             try:
                 #testa se há ou não há orientações para
