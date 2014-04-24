@@ -45,20 +45,19 @@ def cria_arquivo_vazio_proposicoes():
     with open("proposicoes.csv", "w", encoding='UTF8') as file:
         writer = csv.writer(
             file,
-            delimiter=',',
+            delimiter=';',
             quotechar='"',
             quoting=csv.QUOTE_ALL)
         writer.writerow(
-            ["codigo",
-             "tipo",
-             "numero",
-             "ano",
-             "data_votacao",
-             "hora_votacao",
-             "ementa",
-             "resumo",
-             "orientacao_governo",
-             "num_votacoes"])
+            ["ID_VOTACAO",
+            "DATA",
+            "HORA",
+            "ORIENTACAO_GOVERNO",
+            "TIPO",
+            "NUMERO",
+            "ANO",
+            "EMENTA",
+            "O_QUE_FOI_VOTADO"])
 
 
 def existe_arquivo_votos():
@@ -76,14 +75,13 @@ def cria_arquivo_vazio_votos():
     with open("votos.csv", "w", encoding='UTF8') as file:
         writer = csv.writer(
             file,
-            delimiter=',',
+            delimiter=';',
             quotechar='"',
             quoting=csv.QUOTE_ALL)
-        writer.writerow(["codigo_votacao",
-                         "id_deputado",
-                         "nome_deputado",
-                         "partido",
-                         "voto"])
+        writer.writerow(["ID_VOTACAO",
+                         "POLITICO",
+                         "VOTO",
+                         "PARTIDO"])
 
 
 def busca_proposicoes_antigas(ano):
@@ -322,4 +320,7 @@ def obter_proposicoes(ano):
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
+obter_proposicoes("2011")
+obter_proposicoes("2012")
+obter_proposicoes("2013")
 obter_proposicoes("2014")
