@@ -26,6 +26,7 @@ from bs4 import BeautifulSoup
 import csv
 import time
 from datetime import datetime as dt
+import os
 
 
 def existe_arquivo_proposicoes():
@@ -37,7 +38,8 @@ def existe_arquivo_proposicoes():
     except IOError:
         print("Não há arquivo de votações no diretório local.")
         return False
-
+        
+print(existe_arquivo_proposicoes())
 
 def cria_arquivo_vazio_proposicoes():
     #""" Cria um arquivo vazio de proposicoes caso não exista
@@ -330,7 +332,4 @@ def obter_proposicoes(ano):
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
-obter_proposicoes("2011")
-obter_proposicoes("2012")
-obter_proposicoes("2013")
-obter_proposicoes("2014")
+#obter_proposicoes("2014")
