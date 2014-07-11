@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import csv
 
 def busca_novas_proposicoes(datas,prop_antigas):
-    votacoes = {}
+    contador = 0
     #para cada data
     for d in datas:
         print("Procurando votações em: "+d)
@@ -23,26 +23,35 @@ def busca_novas_proposicoes(datas,prop_antigas):
                 codigo = v.codigosessaovotacao.string
                 #vê se a votação já está no arquivo antigo. se não estiver, adicione os dados
                 if codigo not in prop_antigas:
-                    votacoes[codigo] = {}
-                    votacoes[codigo]["data"] = d[2:]
-                    votacoes[codigo]["hora"] = v.horainicio.string + ":00"
-                    votacoes[codigo]["orientacao_governo"] = voto_lider_governo[0]
-                    votacoes[codigo]["tipo"] = v.siglamateria.string
-                    votacoes[codigo]["numero"] = v.numeromateria.string
-                    votacoes[codigo]["ano"] = v.anomateria.string
-                    votacoes[codigo]["ementa"],votacoes[codigo]["explicacao"] = consulta_ementa(v.codigomateria.string)
-                    votacoes[codigo]["o que foi votado"] = v.descricaovotacao.string.replace("\"","\'")
-                    votacoes[codigo]["politicos"] = []
-                    votacoes[codigo]["votos"] = []
-                    votacoes[codigo]["partidos"] = []
-                    for l in lista_votos:
-                        votacoes[codigo]["politicos"].append(l.nomeparlamentar.string)
-                        votacoes[codigo]["votos"].append(traduz_voto(l.voto.string))
-                        votacoes[codigo]["partidos"].append(l.siglapartido.string)
+                    #se a votação não é secreta:
+                    if v.secreta.string != 'S':
+                        voto = {}
+                        voto["codigo"] = codigo
+                        voto["data"] = d[2:]
+                        voto["hora"] = v.horainicio.string + ":00"
+                        voto["orientacao_governo"] = traduz_voto(voto_lider_governo[0])
+                        voto["tipo"] = v.siglamateria.string
+                        voto["numero"] = v.numeromateria.string
+                        voto["ano"] = v.anomateria.string
+                        voto["ementa"] = consulta_ementa(v.codigomateria.string)
+                        voto["o que foi votado"] = v.descricaovotacao.string.replace("\"","\'").strip()
+                        voto["politicos"] = []
+                        voto["votos"] = []
+                        voto["partidos"] = []
+                        for l in lista_votos:
+                            voto["politicos"].append(l.nomeparlamentar.string)
+                            voto["votos"].append(traduz_voto(l.voto.string))
+                            voto["partidos"].append(l.siglapartido.string)
+                        
+                        prop_antigas.append(codigo)
 
-                    prop_antigas.append(codigo)                    
-
-    return votacoes
+                        #escreve o resultado
+                        escreveu = escreve_resultado(voto)
+                        if escreveu:
+                            contador = contador + 1
+    
+    print("Foram adicionadas "+str(contador)+" novas proposições ao arquivo.")
+                        
 
 def traduz_voto(voto):
     voto = voto.strip()
@@ -71,11 +80,7 @@ def consulta_ementa(codigo):
     bs = BeautifulSoup(data)
     materias = bs.findAll("materia")
     ementa = materias[0].ementa.string
-    try: 
-        explicacao = materias[0].explicacaoementa.string
-    except:
-        explicacao = ""
-    return ementa, explicacao 
+    return ementa.strip() 
 
 def cria_lista_datas(data_inicio,data_fim):
     data_inicio = datetime.strptime(data_inicio, "%d%m%Y").date()
@@ -124,7 +129,7 @@ def cria_arquivo_vazio():
             "ANO",
             "EMENTA",
             "O_QUE_FOI_VOTADO",
-            "explicacao"
+            "LINGUAGEM_COMUM"
             ])
         
         escreve_voto.writerow([
@@ -134,7 +139,8 @@ def cria_arquivo_vazio():
             "VOTO"
             ])
             
-def escreve_resultado(votacoes):
+def escreve_resultado(v):
+    escreveu = False
     with open("senado_votacoes.csv", "a", encoding='UTF8') as prop_saida,\
     open("senado_votos.csv", "a", encoding='UTF8') as voto_saida:
         escreve_prop = csv.writer(
@@ -149,36 +155,33 @@ def escreve_resultado(votacoes):
             quotechar='"',
             quoting=csv.QUOTE_ALL)
     
-        contador = 0
-        for key in votacoes:
-            v = votacoes[key]
-            if v["orientacao_governo"] in ["Sim","Não"]:
-                contador = contador + 1
-            
-                #escreve no arquivo de proposiçÕes
-                escreve_prop.writerow([
-                    key,
-                    v["data"],
-                    v["hora"],
-                    v["orientacao_governo"],
-                    v["tipo"],
-                    v["numero"],
-                    v["ano"],
-                    v["ementa"],
-                    v["o que foi votado"],
-                    v["explicacao"]
+        if v["orientacao_governo"] in ["SIM","NAO"]:
+            escreveu = True
+    
+            #escreve no arquivo de proposiçÕes
+            escreve_prop.writerow([
+                v["codigo"],
+                v["data"],
+                v["hora"],
+                v["orientacao_governo"],
+                v["tipo"],
+                v["numero"],
+                v["ano"],
+                v["ementa"],
+                v["o que foi votado"],
+                ""
+                ])
+    
+            #escreve no arquivo de votos
+            for l in range(len(v["votos"])):
+                escreve_voto.writerow([
+                    v["codigo"],
+                    v["politicos"][l],
+                    v["partidos"][l],
+                    v["votos"][l]
                     ])
-            
-                #escreve no arquivo de votos
-                for l in range(len(v["votos"])):
-                    escreve_voto.writerow([
-                        key,
-                        v["politicos"][l],
-                        v["partidos"][l],
-                        v["votos"][l]
-                        ])
-            
-        print("Foram adicionadas "+str(contador)+" votações para o período selecionado")                                        
+    #diz se a votacao entrou ou não
+    return escreveu
     
 def atualiza_votacoes(data_inicio,data_fim):
 
@@ -190,12 +193,9 @@ def atualiza_votacoes(data_inicio,data_fim):
     if not prop_antigas:
         cria_arquivo_vazio()   
 
-    #busca as votações
+    #busca as votações e escreve
     votacoes = busca_novas_proposicoes(datas,prop_antigas)
     
-    #escreve o resultado
-    escreve_resultado(votacoes)
 
-
-atualiza_votacoes("08022011","10072014")
+atualiza_votacoes("01012011","10072014")
     
