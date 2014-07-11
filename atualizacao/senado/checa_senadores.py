@@ -3,20 +3,25 @@
 
 from pandas import DataFrame, read_csv
 from unicodedata import normalize
-import os
-
-os.chdir("/Users/rodrigoburgarelli/Documents/Estadão Dados/Basômetro")
 
 def remover_acentos(txt):
-    return normalize('NFKD', txt).encode('ASCII','ignore').decode('ASCII')
+    txt = txt.strip()
+    txt = normalize('NFKD', txt).encode('ASCII','ignore').decode('ASCII')
+    traducao = {
+        "Assis Gurgacz":"Acir Gurgacz"
+    }
+    if txt in traducao:
+        return traducao[txt]
+    else:
+        return txt
 
 def limpar_votos():
-    votos = read_csv("senado_votos_novo.csv",sep=";")
+    votos = read_csv("senado_votos.csv",sep=";")
     votos["POLITICO"] = votos["POLITICO"].apply(remover_acentos)
-    votos.to_csv("senado_votos_novo.csv",sep=";",index=False)
+    votos.to_csv("senado_votos.csv",sep=";",index=False)
     
 def testa_voto():
-    votos = read_csv("senado_votos_novo.csv",sep=";")
+    votos = read_csv("senado_votos.csv",sep=";")
     politicos = read_csv("senadores.csv",sep=";")
     lista_politicos = []
 
@@ -27,5 +32,7 @@ def testa_voto():
     lista_politicos = list(set(lista_politicos))
     print(len(lista_politicos))
     print(lista_politicos)
+    
 limpar_votos()
 testa_voto()
+
