@@ -39,7 +39,6 @@ def existe_arquivo_proposicoes():
         print("Não há arquivo de votações no diretório local.")
         return False
         
-print(existe_arquivo_proposicoes())
 
 def cria_arquivo_vazio_proposicoes():
     #""" Cria um arquivo vazio de proposicoes caso não exista
@@ -332,4 +331,6 @@ def obter_proposicoes(ano):
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
-#obter_proposicoes("2014")
+obter_proposicoes("2011")
+obter_proposicoes("2012")
+obter_proposicoes("2013")
