@@ -39,18 +39,44 @@ def traduz_nome(txt):
     else:
         return saida
 
+def traduz_voto(voto):
+    voto = voto.strip()
+    traducao = {
+        "NÃO":"NAO",
+        "OBSTRUÇÃO":"OBSTRUCAO",
+        "ABSTENÇÃO":"ABSTENCAO",
+        "ART. 17":"PRESIDENTE"
+    }
+    if voto in traducao:
+        return traducao[voto]
+    else:
+        return voto
+
+def traduz_partido(partido):
+    partido = partido.strip()
+    traducao = {
+        "Solidaried":"SDD"
+    }
+    if partido in traducao:
+        return traducao[partido]
+    else:
+        return partido
+    
 def limpar_votos():
     
     votos = read_csv("votos.csv",sep=";", dtype=object)
-    
-    #arruma nome dos deputados
+    props = read_csv("proposicoes.csv",sep=";",dtype=object)
+        
+    #arruma nome dos deputados, partidos e votos
     votos["POLITICO"] = votos["POLITICO"].apply(traduz_nome)
+    votos["VOTO"] = votos["VOTO"].apply(traduz_voto)
+    votos["PARTIDO"] = votos["PARTIDO"].apply(traduz_partido)
     
     #se tiver a votação do senado no meio da Câmara, retira
     votos = votos[votos.ID_VOTACAO != "1320100555286000"]
-    props = read_csv("proposicoes.csv",sep=";",dtype=object)
     props = props[props.ID_VOTACAO != "1320100555286000"]
     
+    #arruma o nome
     votos.to_csv("votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
     props.to_csv("proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
     
@@ -141,8 +167,8 @@ def checa_proposicoes():
         if not (p in list(props["ID_VOTACAO"])):
             print("hue")
     
-#limpar_votos()
-checa_deputado()
+limpar_votos()
+#checa_deputado()
 #checa_proposicoes()
 
 #adiciona_deputado("SUBTENENTE GONZAGA")
