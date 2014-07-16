@@ -76,6 +76,7 @@ def limpar_votos():
     votos = votos[votos.ID_VOTACAO != "1320100555286000"]
     props = props[props.ID_VOTACAO != "1320100555286000"]
     
+
     #arruma o nome
     votos.to_csv("votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
     props.to_csv("proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
@@ -100,7 +101,8 @@ def checa_deputado():
     print(len(lista_politicos))
     print(lista_politicos)
     
-    adiciona_deputado(lista_politicos,politicos)
+    if (lista_politicos):
+        adiciona_deputado(lista_politicos,politicos)
 
 def adiciona_deputado(lista_deputados,politicos):
     #url principal e dados principais
@@ -161,14 +163,15 @@ def checa_proposicoes():
     props = read_csv("proposicoes.csv",sep=";")
     for p in list(props["ID_VOTACAO"]):
         if not (p in list(votos["ID_VOTACAO"])):
-            print("hue")
+            print(p)
     
-    for p in list(votos["ID_VOTACAO"]):
-        if not (p in list(props["ID_VOTACAO"])):
-            print("hue")
+    #for p in list(votos["ID_VOTACAO"]):
+    #    if not (p in list(props["ID_VOTACAO"])):
+    #        print("hue")
     
-limpar_votos()
-#checa_deputado()
+#limpar_votos()
 #checa_proposicoes()
+checa_deputado()
+
 
 #adiciona_deputado("SUBTENENTE GONZAGA")

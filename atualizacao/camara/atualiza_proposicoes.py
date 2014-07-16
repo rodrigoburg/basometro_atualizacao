@@ -21,6 +21,7 @@
 # votos.csv para toda votação que for acrescentada seguindo os
 # critérios descritos acima.
 
+import hashlib
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import csv
@@ -58,7 +59,8 @@ def cria_arquivo_vazio_proposicoes():
             "NUMERO",
             "ANO",
             "EMENTA",
-            "O_QUE_FOI_VOTADO"])
+            "O_QUE_FOI_VOTADO",
+            "LINGUAGEM_COMUM"])
 
 
 def existe_arquivo_votos():
@@ -210,23 +212,12 @@ def media_algarismos(numero):
     
 def cria_novo_codigo(data_votacao,hora_votacao,codigo,resumo):    
     #cria código para a data e hora
+    codigo = hashlib.md5((data_votacao+hora_votacao+codigo+resumo).encode()).hexdigest()
+    
     data = data_votacao.split("/")
-    codigo_data = media_algarismos(data[2][2:4] + "%02d" % int(data[1])) + media_algarismos("%02d" % int(data[0])) + hora_votacao.replace(":","") 
     data = data[2][2:4] + "%02d" % int(data[1]) + "%02d" % int(data[0])
                     
-    #normaliza o número de caracteres em 8 para o código normal da proposição
-    codigo_codigo = "%07d" % int(codigo)
-    
-    #cria código para o resumo (número que representa matematicamente o
-    #resumo para diferenciar as votações registradas na mesma hora)
-    tamanho = len(resumo)
-    if tamanho == 0:
-        codigo_resumo = "000"
-    else:
-        codigo_resumo = "%03d" % int((ord(resumo[int(tamanho/2)]) + ord(resumo[int(tamanho/3)]) + ord(resumo[int(tamanho/4)])) / 3)
-    
-    #junta os códigos
-    return codigo_data + codigo_codigo + codigo_resumo,data
+    return codigo,data
     
 
 def adiciona_novas_proposicoes(proposicoes, prop_antigas, ano):
@@ -332,5 +323,6 @@ def obter_proposicoes(ano):
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
 obter_proposicoes("2011")
-obter_proposicoes("2012")
-obter_proposicoes("2013")
+#obter_proposicoes("2012")
+#obter_proposicoes("2013")
+#obter_proposicoes("2014")
