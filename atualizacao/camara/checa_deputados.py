@@ -118,7 +118,7 @@ def adiciona_deputado(lista_deputados,politicos):
     #endereço local do arquivo XML com deputados antigos
     #o link para o download deste arquivo é este:
     #http://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo/webservices/deputados
-    url2 = "file://localhost/Users/rodrigoburg/Downloads/Deputados%202.xml"
+    url2 = "file://"+os.getcwd()+"/Deputados.xml"
     dados2 = BeautifulSoup(urlopen(url2).read())
     deputados2 = dados2.findAll("deputado")
 
@@ -169,9 +169,8 @@ def checa_proposicoes():
     #    if not (p in list(props["ID_VOTACAO"])):
     #        print("hue")
 
-limpar_votos()
-checa_proposicoes()
-checa_deputado()
-
+#limpar_votos()
+#checa_proposicoes()
+#checa_deputado()
 
 #adiciona_deputado("SUBTENENTE GONZAGA")
