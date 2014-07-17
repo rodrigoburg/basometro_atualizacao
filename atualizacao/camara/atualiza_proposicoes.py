@@ -150,6 +150,7 @@ def pega_dados_API_proposicao(prop):
 def pega_dados_API_votacoes(proposicao):
     #"""Pega os dados da proposicao de acordo com a API de proposicoes"""
     url = "http://www.camara.gov.br/SitCamaraWS/Proposicoes.asmx/ObterVotacaoProposicao?tipo=" + proposicao["tipo"] + "&numero=" + proposicao["numero"] + "&ano=" + proposicao["ano"]
+    proposicao["votacoes"] = []
     try:
         connection = urlopen(url)
         data = connection.read()
@@ -157,7 +158,6 @@ def pega_dados_API_votacoes(proposicao):
         return proposicao
     bs = BeautifulSoup(data)
     votacoes = bs.findAll("votacao")
-    proposicao["votacoes"] = []
 
     #agora ele pega todas as informações para cada votação ocorrida no ano
     for votacao_ in votacoes:
@@ -247,52 +247,53 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
             proposicao = obter_dados_proposicao(proposicao)
 
             #para cada uma das votações registradas
-            for votacao in proposicao["votacoes"]:
-                #cria o código para ver se a votação já foi registrada antess
-                data = parse_data_votacao(votacao)
+            if len(proposicao["votacoes"]) > 0:
+                for votacao in proposicao["votacoes"]:
+                    #cria o código para ver se a votação já foi registrada antess
+                    data = parse_data_votacao(votacao)
 
-                #se não é repetido
-                if votacao["codigo"] not in prop_antigas:
-                    #se existe orientação do governo
-                    if votacao["orientacao_governo"] in ["Sim","Não"]:
-                        prop_antigas.append(votacao["codigo"])
-                        contador += 1
-                        escreve_prop.writerow([votacao["codigo"],
-                                               data,
-                                               votacao["hora_votacao"] + ":00",
-                                               votacao["orientacao_governo"],
-                                               proposicao["tipo"],
-                                               proposicao["numero"],
-                                               proposicao["ano"],
-                                               proposicao["ementa"],
-                                               votacao["resumo"]])
+                    #se não é repetido
+                    if votacao["codigo"] not in prop_antigas:
+                        #se existe orientação do governo
+                        if votacao["orientacao_governo"] in ["Sim","Não"]:
+                            prop_antigas.append(votacao["codigo"])
+                            contador += 1
+                            escreve_prop.writerow([votacao["codigo"],
+                                                   data,
+                                                   votacao["hora_votacao"] + ":00",
+                                                   votacao["orientacao_governo"],
+                                                   proposicao["tipo"],
+                                                   proposicao["numero"],
+                                                   proposicao["ano"],
+                                                   proposicao["ementa"],
+                                                   votacao["resumo"]])
 
-                        #loop para adicionar uma linha para cada
-                        # deputado no arquivo de votos
-                        try:
-                            for voto_ in votacao["votos"]:
-                                escreve_voto.writerow(
-                                    [votacao["codigo"],
-                                     voto_["nome"].upper(),
-                                     voto_["voto"].upper(),
-                                     voto_["partido"]])
-                        except:
-                            pass
+                            #loop para adicionar uma linha para cada
+                            # deputado no arquivo de votos
+                            try:
+                                for voto_ in votacao["votos"]:
+                                    escreve_voto.writerow(
+                                        [votacao["codigo"],
+                                         voto_["nome"].upper(),
+                                         voto_["voto"].upper(),
+                                         voto_["partido"]])
+                            except:
+                                pass
 
-                        #loop para adicionar orientações no arquivo de orientações
-                        try:
-                            for orientacao_ in votacao["orientacoes"]:
-                                escreve_orientacao.writerow(
-                                    [votacao["codigo"],
-                                    votacao["data_votacao"],
-                                    votacao["hora_votacao"],
-                                    orientacao_,
-                                    votacao["orientacoes"][orientacao_]])
-                        except:
-                            pass
-                #se houver repeticao:
-                else:
-                    repeticoes += 1
+                            #loop para adicionar orientações no arquivo de orientações
+                            try:
+                                for orientacao_ in votacao["orientacoes"]:
+                                    escreve_orientacao.writerow(
+                                        [votacao["codigo"],
+                                        votacao["data_votacao"],
+                                        votacao["hora_votacao"],
+                                        orientacao_,
+                                        votacao["orientacoes"][orientacao_]])
+                            except:
+                                pass
+                    #se houver repeticao:
+                    else:
+                        repeticoes += 1
 
     print("Foram adicionadas " + str(contador) + " votações no arquivo local, com "+str(repeticoes)+" repeticoes.\n")
 
@@ -316,6 +317,6 @@ def obter_proposicoes(ano):
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
 obter_proposicoes("2011")
-#obter_proposicoes("2012")
-#obter_proposicoes("2013")
-#obter_proposicoes("2014")
+obter_proposicoes("2012")
+obter_proposicoes("2013")
+obter_proposicoes("2014")

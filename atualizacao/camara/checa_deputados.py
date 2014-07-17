@@ -11,10 +11,10 @@ import csv
 def traduz_nome(txt):
     #remove acentos
     saida = normalize('NFKD', txt).encode('ASCII','ignore').decode('ASCII')
-    
+
     #remove espaços extras
     saida = saida.strip()
-    
+
     #muda nomes errados
     traducao = {
         "MANUELA D`AVILA":"MANUELA DAVILA",
@@ -33,9 +33,9 @@ def traduz_nome(txt):
         "JOAO PAULO  LIMA":"JOAO PAULO LIMA",
         "JOSE DE FILIPPI JUNIOR":"JOSE DE FILIPPI",
     }
-    
+
     if saida in traducao:
-        return traducao[saida]    
+        return traducao[saida]
     else:
         return saida
 
@@ -61,34 +61,34 @@ def traduz_partido(partido):
         return traducao[partido]
     else:
         return partido
-    
+
 def limpar_votos():
-    
+
     votos = read_csv("votos.csv",sep=";", dtype=object)
     props = read_csv("proposicoes.csv",sep=";",dtype=object)
-        
+
     #arruma nome dos deputados, partidos e votos
     votos["POLITICO"] = votos["POLITICO"].apply(traduz_nome)
     votos["VOTO"] = votos["VOTO"].apply(traduz_voto)
     votos["PARTIDO"] = votos["PARTIDO"].apply(traduz_partido)
-    
+
     #se tiver a votação do senado no meio da Câmara, retira
     votos = votos[votos.ID_VOTACAO != "1320100555286000"]
     props = props[props.ID_VOTACAO != "1320100555286000"]
-    
+
 
     #arruma o nome
     votos.to_csv("votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
     props.to_csv("proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-    
+
 def checa_deputado():
     votos = read_csv("votos.csv",sep=";")
     try:
         politicos = read_csv("deputados.csv",sep=";")
     except OSError: #se não houver arquivo de deputados, cria um DF vazio
         colunas = ['POLITICO', 'NOME_CASA','PARTIDO',"UF",'ID',"ANO_MANDATO","LEGISLATURA","URL_FOTO"]
-        politicos = DataFrame(columns=colunas) 
-    
+        politicos = DataFrame(columns=colunas)
+
 
     lista_politicos = []
 
@@ -97,10 +97,10 @@ def checa_deputado():
             lista_politicos.append(p)
 
     lista_politicos = list(set(lista_politicos))
-    
+
     print(len(lista_politicos))
     print(lista_politicos)
-    
+
     if (lista_politicos):
         adiciona_deputado(lista_politicos,politicos)
 
@@ -109,19 +109,19 @@ def adiciona_deputado(lista_deputados,politicos):
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
     deputados = dados.findAll("deputado")
-    
+
     for d in deputados:
         print(d.nomeparlamentar.string)
         print(lista_deputados)
         print(lista_deputados[0] == d.nomeparlamentar.string)
-    
+
     #endereço local do arquivo XML com deputados antigos
-    #o link para o download deste arquivo é este:      
+    #o link para o download deste arquivo é este:
     #http://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo/webservices/deputados
     url2 = "file://localhost/Users/rodrigoburg/Downloads/Deputados%202.xml"
     dados2 = BeautifulSoup(urlopen(url2).read())
     deputados2 = dados2.findAll("deputado")
-    
+
     #para cada deputado fora do nosso arquivo
     for d in lista_deputados:
         deputado = {}
@@ -137,7 +137,7 @@ def adiciona_deputado(lista_deputados,politicos):
                 deputado["ANO_MANDATO"] = "2011"
                 deputado["LEGISLATURA"] = "54"
                 deputado["URL_FOTO"] = i.urlfoto.string
-            
+
         #se esse deputado não estiver no site, procura no arquivo local:
         if not deputado:
             for i in deputados2:
@@ -150,27 +150,27 @@ def adiciona_deputado(lista_deputados,politicos):
                     deputado["ID"] = i.idecadastro.string
                     deputado["LEGISLATURA"] = i.numlegislatura.string
                     deputado["ANO_MANDATO"] = "2011" if deputado["LEGISLATURA"] == "54" else "2007"
-                    deputado["URL_FOTO"] = ""           
-            
+                    deputado["URL_FOTO"] = ""
+
         if deputado:
             politicos = politicos.append(deputado,ignore_index=True)
             print("Político adicionado: "+deputado["NOME_CASA"])
-    
+
     politicos.to_csv("deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-    
+
 def checa_proposicoes():
     votos = read_csv("votos.csv",sep=";")
     props = read_csv("proposicoes.csv",sep=";")
     for p in list(props["ID_VOTACAO"]):
         if not (p in list(votos["ID_VOTACAO"])):
             print(p)
-    
+
     #for p in list(votos["ID_VOTACAO"]):
     #    if not (p in list(props["ID_VOTACAO"])):
     #        print("hue")
-    
-#limpar_votos()
-#checa_proposicoes()
+
+limpar_votos()
+checa_proposicoes()
 checa_deputado()
 
 
