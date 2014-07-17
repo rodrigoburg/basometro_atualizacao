@@ -73,8 +73,8 @@ def limpar_votos():
     votos["PARTIDO"] = votos["PARTIDO"].apply(traduz_partido)
 
     #se tiver a votação do senado no meio da Câmara, retira
-    votos = votos[votos.ID_VOTACAO != "1320100555286000"]
-    props = props[props.ID_VOTACAO != "1320100555286000"]
+    votos = votos[votos.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
+    props = props[props.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
 
 
     #arruma o nome
@@ -110,10 +110,10 @@ def adiciona_deputado(lista_deputados,politicos):
     dados = BeautifulSoup(urlopen(url).read())
     deputados = dados.findAll("deputado")
 
-    for d in deputados:
-        print(d.nomeparlamentar.string)
-        print(lista_deputados)
-        print(lista_deputados[0] == d.nomeparlamentar.string)
+    #for d in deputados:
+        #print(d.nomeparlamentar.string)
+        #print(lista_deputados)
+        #print(lista_deputados[0] == d.nomeparlamentar.string)
 
     #endereço local do arquivo XML com deputados antigos
     #o link para o download deste arquivo é este:
@@ -169,8 +169,8 @@ def checa_proposicoes():
     #    if not (p in list(props["ID_VOTACAO"])):
     #        print("hue")
 
-#limpar_votos()
-#checa_proposicoes()
-#checa_deputado()
+limpar_votos()
+checa_proposicoes()
+checa_deputado()
 
 #adiciona_deputado("SUBTENENTE GONZAGA")
