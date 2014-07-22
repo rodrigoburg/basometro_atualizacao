@@ -1,10 +1,13 @@
 import csv
-from pandas import DataFrame
+from pandas import DataFrame, read_csv
+import os
+import json
 
 def pega_arquivos():
     props = []
     votos = []
-    with open("/Users/rodrigoburgarelli/Documents/Estadão Dados/Basômetro/proposicoes.csv", "r") as prop, open("/Users/rodrigoburgarelli/Documents/Estadão Dados/Basômetro/votos.csv", "r") as voto:
+    path = os.path.dirname(os.path.abspath(__file__))
+    with open(path+"/atualizacao/camara/proposicoes.csv", "r") as prop, open(path+"/atualizacao/camara/votos.csv", "r") as voto:
         
         arquivo_prop = csv.reader(prop,delimiter = ";")
         next(arquivo_prop, None)  # ignora o cabeçalho
@@ -35,25 +38,35 @@ def pega_arquivos():
 def media(lista):
     return sum(lista) / float(len(lista))
     
-def calcula_governismo(props,votos):
-    df_votos = DataFrame(votos)
-    df_props = DataFrame(props)
+def calcula_governismo(props,df_votos):
+    
+    df_props = props.T.to_dict().values()
+    
     resultado = []
     deputados = []
-    for p in props:
-        g = 0
-        subvotos = df_votos[df_votos["codigo"] == p["codigo"]]
-        deputados.append(len(subvotos))
-        for v in list(subvotos["voto"]):
-            if v.lower() == p["orientacao"].lower():
-                g +=1
-        resultado.append(g/len(subvotos))
 
-    governismo = media(resultado)
+    for p in df_props:
+        subvotos = df_votos[df_votos["ID_VOTACAO"] == p["ID_VOTACAO"]]
+        deputados.append(len(subvotos))
+        temp = subvotos[subvotos.VOTO == p["ORIENTACAO_GOVERNO"].upper()]
+
+        try: 
+            resultado.append(len(temp)/len(subvotos))
+        except ZeroDivisionError:
+            pass
+
+    try:
+        governismo = media(resultado)
+        return governismo
+        
+    except ZeroDivisionError:
+        return None
     
-    print("Número de votações que bateram: "+str(len(resultado)))
-    print("Média de deputados por sessão de votação: "+str(media(deputados)))
-    print("Taxa de governismo: "+str(governismo))        
+#    print("Número de votações: "+str(len(resultado)))
+#    print("Média de deputados por sessão de votação: "+str(media(deputados)))
+#    print("Taxa de governismo: "+str(governismo))
+
+          
 
 def calcula_deputados(props,votos):
     df_votos = DataFrame(votos)
@@ -124,5 +137,51 @@ def faz_analise():
     for p in lista_codigos_votos:
         if p not in lista_codigos:
             print(p)
+
+def conserta_voto(voto):
+    if voto == "Sim":
+        return "SIM"
+    elif voto == "Não":
+        return "NAO"
+    else:        
+        return voto 
+
+def acha_meses(datas):
+    return set([str(d)[0:4] for d in datas])
+
+        
+def governismo_partido():
+    path = os.path.dirname(os.path.abspath(__file__))
+    props = read_csv(path+"/atualizacao/camara/proposicoes.csv",sep=";")
+    props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
+    datas = list(set(list(props["DATA"])))
+    meses = acha_meses(datas)
+    votos = read_csv(path+"/atualizacao/camara/votos.csv",sep=";")
+    votos = votos[votos.VOTO != 'ABSTENCAO']
+    votos = votos[votos.VOTO != 'PRESIDENTE']
     
-faz_analise()
+    votos['VOTO'] = votos['VOTO'].apply(conserta_voto)
+    
+    partidos = set(list(votos["PARTIDO"]))
+    saida = {}
+    
+    for p in partidos:
+        saida[p] = []
+        temp = votos[votos.PARTIDO == p]
+        for m in meses: 
+            props_temp = props
+            props_temp["FILTRO"] = props_temp["DATA"].apply(lambda t: str(t).startswith(m))
+            props_temp = props_temp[props_temp.FILTRO == True]
+            if len(props_temp) > 0:                
+                governismo = calcula_governismo(props_temp,temp)
+                if (governismo):
+                    item = {}
+                    item["data"] = "20"+m[0:2]+"-"+m[2:4]+"-01"
+                    item["valor"] = int(round(governismo*100,0))
+                    saida[p].append(item) 
+    
+    with open ("medias_partido_mes.json","w",encoding='UTF8') as file:
+        file.write(json.dumps(saida))
+    
+governismo_partido()
+
