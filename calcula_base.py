@@ -39,23 +39,26 @@ def media(lista):
     return sum(lista) / float(len(lista))
     
 def calcula_governismo(props,df_votos):
-    
+    #transforma DataFrame em lista de dicionários
     df_props = props.T.to_dict().values()
     
     resultado = []
-    deputados = []
-
+    
+    #para cada proposição dos dicionários
     for p in df_props:
+        #subset do DataFrame de votos para aquela proposição
         subvotos = df_votos[df_votos["ID_VOTACAO"] == p["ID_VOTACAO"]]
-        deputados.append(len(subvotos))
+        #subset do DataFrame de votos que são iguais à orientação do governo
         temp = subvotos[subvotos.VOTO == p["ORIENTACAO_GOVERNO"].upper()]
 
         try: 
+            #faz a relação entre o tamanho dos dois subsets e adiciona isso para uma lista
             resultado.append(len(temp)/len(subvotos))
         except ZeroDivisionError:
             pass
 
     try:
+        #faz a média do resultado, achando assim o governismo para os dois arquivos processados
         governismo = media(resultado)
         return governismo
         
@@ -63,9 +66,7 @@ def calcula_governismo(props,df_votos):
         return None
     
 #    print("Número de votações: "+str(len(resultado)))
-#    print("Média de deputados por sessão de votação: "+str(media(deputados)))
 #    print("Taxa de governismo: "+str(governismo))
-
           
 
 def calcula_deputados(props,votos):
@@ -151,35 +152,62 @@ def acha_meses(datas):
 
         
 def governismo_partido():
+    #pega diretório do script para abrir os arquivos de votos e proposições
     path = os.path.dirname(os.path.abspath(__file__))
+    
+    #pega arquivo de proposições e conserta maiúsculas/minúsculas/acento
     props = read_csv(path+"/atualizacao/camara/proposicoes.csv",sep=";")
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
+    
+    #acha lista de combinações ano/mês
     datas = list(set(list(props["DATA"])))
     meses = acha_meses(datas)
+    
+    #pega arquivo de votos e retira abstenções e presidente
     votos = read_csv(path+"/atualizacao/camara/votos.csv",sep=";")
     votos = votos[votos.VOTO != 'ABSTENCAO']
-    votos = votos[votos.VOTO != 'PRESIDENTE']
-    
+    votos = votos[votos.VOTO != 'PRESIDENTE']    
     votos['VOTO'] = votos['VOTO'].apply(conserta_voto)
     
     partidos = set(list(votos["PARTIDO"]))
     saida = {}
     
+    #calcula o governismo para cada partido
     for p in partidos:
         saida[p] = []
         temp = votos[votos.PARTIDO == p]
         for m in meses: 
+            #cria variável temporária de proposicoes, onde a data começa com o ano/mes da lista
             props_temp = props
             props_temp["FILTRO"] = props_temp["DATA"].apply(lambda t: str(t).startswith(m))
             props_temp = props_temp[props_temp.FILTRO == True]
+            
+            #se houver proposição neste período
             if len(props_temp) > 0:                
                 governismo = calcula_governismo(props_temp,temp)
+                #se houver governismo para esse partido, ou seja, algum voto
                 if (governismo):
                     item = {}
                     item["data"] = "20"+m[0:2]+"-"+m[2:4]+"-01"
                     item["valor"] = int(round(governismo*100,0))
-                    saida[p].append(item) 
-    
+                    saida[p].append(item)
+
+    #agora faz os cálculos para o total dos deputaods, sem filtrar por partido
+    saida["Geral"] = []
+    for m in meses: 
+        props_temp = props
+        props_temp["FILTRO"] = props_temp["DATA"].apply(lambda t: str(t).startswith(m))
+        props_temp = props_temp[props_temp.FILTRO == True]
+        #se houver proposição neste período
+        if len(props_temp) > 0:                
+            governismo = calcula_governismo(props_temp,votos)
+            if (governismo):
+                item = {}
+                item["data"] = "20"+m[0:2]+"-"+m[2:4]+"-01"
+                item["valor"] = int(round(governismo*100,0))
+                saida["Geral"].append(item)
+        
+    #escreve Json de saída    
     with open ("medias_partido_mes.json","w",encoding='UTF8') as file:
         file.write(json.dumps(saida))
     
