@@ -38,11 +38,12 @@ def pega_arquivos():
 def media(lista):
     return sum(lista) / float(len(lista))
 
-def calcula_governismo(props,df_votos):
+def calcula_governismo(props,df_votos,tamanho=False):
     #transforma DataFrame em lista de dicionários
     df_props = props.T.to_dict().values()
 
     resultado = []
+    total_de_votacoes = 0
 
     #para cada proposição dos dicionários
     for p in df_props:
@@ -54,13 +55,17 @@ def calcula_governismo(props,df_votos):
         try:
             #faz a relação entre o tamanho dos dois subsets e adiciona isso para uma lista
             resultado.append(len(temp)/len(subvotos))
+            total_de_votacoes += len(subvotos)
         except ZeroDivisionError:
             pass
 
     try:
         #faz a média do resultado, achando assim o governismo para os dois arquivos processados
         governismo = media(resultado)
-        return governismo
+        if tamanho:
+            return governismo, total_de_votacoes
+        else:
+            return governismo
 
     except ZeroDivisionError:
         return None
@@ -148,8 +153,9 @@ def conserta_voto(voto):
         return voto
 
 def acha_meses(datas):
-    return set([str(d)[0:4] for d in datas])
-
+    meses = list(set([str(d)[0:4] for d in datas]))
+    meses.sort()
+    return meses
 
 def governismo_partido():
     #pega diretório do script para abrir os arquivos de votos e proposições
@@ -170,27 +176,30 @@ def governismo_partido():
     votos['VOTO'] = votos['VOTO'].apply(conserta_voto)
 
     partidos = set(list(votos["PARTIDO"]))
-    saida = {}
+    aux_saida = {}
 
     #agora faz os cálculos para o total dos deputaods, sem filtrar por partido
-    saida["Geral"] = []
-    for m in meses:
+    aux_saida["Geral"] = {}
+    for mes in meses:
         props_temp = props
-        props_temp["FILTRO"] = props_temp["DATA"].apply(lambda t: str(t).startswith(m))
+        props_temp["FILTRO"] = props_temp["DATA"].apply(lambda t: str(t).startswith(mes))
         props_temp = props_temp[props_temp.FILTRO == True]
         #se houver proposição neste período
+        item = {}
+        item["date"] = "20"+mes[0:2]+"-"+mes[2:4]+"-01"
+        item["valor"] = -1
+        item["num_votacoes"] = 0
         if len(props_temp) > 0:
-            governismo = calcula_governismo(props_temp,votos)
+            governismo = calcula_governismo(props_temp,votos,True)
             if (governismo):
-                item = {}
-                item["date"] = "20"+m[0:2]+"-"+m[2:4]+"-01"
-                item["valor"] = int(round(governismo*100,0))
-                saida["Geral"].append(item)
+                item["valor"] = int(round(governismo[0]*100,0))
+                item["num_votacoes"] = governismo[1]
+        aux_saida["Geral"][mes] = item
 
     #calcula o governismo para cada partido
-    for p in partidos:
-        saida[p] = []
-        temp = votos[votos.PARTIDO == p]
+    for partido in partidos:
+        aux_saida[partido] = {}
+        temp = votos[votos.PARTIDO == partido]
         for mes in meses:
             #cria variável temporária de proposicoes, onde a data começa com o ano/mes da lista
             props_temp = props
@@ -199,17 +208,46 @@ def governismo_partido():
 
             item = {}
             item["date"] = "20"+mes[0:2]+"-"+mes[2:4]+"-01"
+            item["valor"] = -1
+            item["num_votacoes"] = 0
             #se houver proposição neste período
             if len(props_temp) > 0:
-                governismo = calcula_governismo(props_temp,temp)
+                governismo = calcula_governismo(props_temp,temp,True)
                 #se houver governismo para esse partido, ou seja, algum voto
                 if (governismo):
-                    item["valor"] = int(round(governismo*100,0))
-                else:
-                    item["valor"] = 0
+                    item["valor"] = int(round(governismo[0]*100,0))
+                    item["num_votacoes"] = governismo[1]
+            aux_saida[partido][mes] = item
+
+    saida = {}
+
+    #Cálculo da média móvel
+    #Para cada partido faça....
+    for partido in aux_saida:
+        saida[partido] = []
+        #Para cada mês da lista de meses faça...
+        for mes in meses:
+            indice = meses.index(mes) #Pega o índice do mês na lista
+            item = {}
+            #Se for o primeiro item da lista, só copia os valores
+            #Salva a data no dicionário final
+            item["date"] = aux_saida[partido][mes]["date"]
+            #Inicializa um contador de "meses iterados"
+            contador = 0
+            soma_movel = 0
+            total_local_votacoes = 0
+            while contador <= 3 and (indice - contador >= 0): #2 porque quero pegar os últimos 3 meses
+                soma_movel += aux_saida[partido][meses[indice - contador]]["valor"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                total_local_votacoes += aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                contador+=1
+            #Se o total_local_de_votacoes for maior que zero, ou seja, se tem votação considerada...
+            if total_local_votacoes > 0:
+                item["valor"] = int(round((soma_movel / total_local_votacoes),0))
             else:
-                    item["valor"] = 0
-            saida[p].append(item)
+                item["valor"] = -1
+            print(partido,total_local_votacoes,soma_movel,aux_saida[partido][mes]["valor"], item["valor"])
+
+            saida[partido].append(item)
 
     #escreve Json de saída
     with open ("medias_partido_mes.json","w",encoding='UTF8') as file:
