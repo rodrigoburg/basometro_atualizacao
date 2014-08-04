@@ -220,7 +220,7 @@ def governismo_partido():
             aux_saida[partido][mes] = item
 
     saida = {}
-
+    
     #Cálculo da média móvel
     #Para cada partido faça....
     for partido in aux_saida:
@@ -252,6 +252,7 @@ def governismo_partido():
     #escreve Json de saída
     with open ("medias_partido_mes.json","w",encoding='UTF8') as file:
         file.write(json.dumps(saida))
+    print(saida)
 
 governismo_partido()
 

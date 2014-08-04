@@ -31,6 +31,8 @@ import os
 
 
 def existe_arquivo_proposicoes():
+    path = os.path.dirname(os.path.abspath(__file__))
+    
     #""" Checa se há arquivo de proposicoes no diretório local. se houver,
     #    ele já retorna esse arquivo"""
     try:
@@ -316,7 +318,7 @@ def obter_proposicoes(ano):
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
-obter_proposicoes("2011")
-obter_proposicoes("2012")
-obter_proposicoes("2013")
-obter_proposicoes("2014")
+obter_proposicoes("2007")
+obter_proposicoes("2008")
+obter_proposicoes("2009")
+obter_proposicoes("2010")

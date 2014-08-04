@@ -91,20 +91,24 @@ def checa_deputado():
 
 
     lista_politicos = []
+    partido = {} #aqui é para guardar o partido de cada político
 
     for p in votos["POLITICO"]:
         if p not in list(politicos["NOME_CASA"]):
             lista_politicos.append(p)
+            if p not in partido:
+                sigla = list(votos[votos.POLITICO == p]["PARTIDO"])
+                partido[p] = sigla[0]
 
     lista_politicos = list(set(lista_politicos))
 
     print(len(lista_politicos))
-    print(lista_politicos)
 
+    print(partido)
     if (lista_politicos):
-        adiciona_deputado(lista_politicos,politicos)
+        adiciona_deputados(lista_politicos,politicos,partido)
 
-def adiciona_deputado(lista_deputados,politicos):
+def adiciona_deputados(lista_deputados,politicos,partido):
     #url principal e dados principais
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
@@ -118,7 +122,9 @@ def adiciona_deputado(lista_deputados,politicos):
     #endereço local do arquivo XML com deputados antigos
     #o link para o download deste arquivo é este:
     #http://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo/webservices/deputados
-    url2 = "file://"+os.getcwd()+"/Deputados.xml"
+    path = os.path.dirname(os.path.abspath(__file__))
+    
+    url2 = "file://"+path+"/Deputados.xml"
     dados2 = BeautifulSoup(urlopen(url2).read())
     deputados2 = dados2.findAll("deputado")
 
@@ -151,11 +157,23 @@ def adiciona_deputado(lista_deputados,politicos):
                     deputado["LEGISLATURA"] = i.numlegislatura.string
                     deputado["ANO_MANDATO"] = "2011" if deputado["LEGISLATURA"] == "54" else "2007"
                     deputado["URL_FOTO"] = ""
-
+        
+        #se não tiver nem no arquivo local, só adicione um deputado incognita no arquivo de deputados
+        
+        if not deputado:
+            deputado["POLITICO"] =  d
+            deputado["NOME_CASA"] = d
+            deputado["PARTIDO"] = partido[d]
+            deputado["UF"] = "NA"
+            deputado["ID"] = "NA"
+            deputado["LEGISLATURA"] = "NA"
+            deputado["ANO_MANDATO"] = "NA"
+            deputado["URL_FOTO"] = ""
+            
         if deputado:
             politicos = politicos.append(deputado,ignore_index=True)
             print("Político adicionado: "+deputado["NOME_CASA"])
-
+        
     politicos.to_csv("deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def checa_proposicoes():
