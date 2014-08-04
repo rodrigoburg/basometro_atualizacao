@@ -152,11 +152,19 @@ def conserta_voto(voto):
     else:
         return voto
 
-def acha_meses(datas):
-    meses = list(set([str(d)[0:4] for d in datas]))
+def acha_meses(datas):            
+    meses = list(set([d[0:4] for d in datas]))
     meses.sort()
     return meses
 
+def conserta_data(data):
+    data = str(data)
+    if len(data) == 5:
+        return "0"+data
+    else:
+        return data
+    
+#chame a função governismo_partido com 3 opções: lula1, lula2 e dilma
 def governismo_partido(mandato):
     #pega diretório do script para abrir os arquivos de votos e proposições
     path = os.path.dirname(os.path.abspath(__file__))
@@ -164,11 +172,14 @@ def governismo_partido(mandato):
     #pega arquivo de proposições e conserta maiúsculas/minúsculas/acento
     props = read_csv(path+"/atualizacao/camara/"+mandato+"/proposicoes.csv",sep=";")
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
-
+    
+    #transforma as datas em string e coloca zero na frente dos anos que perderam esse zero
+    props["DATA"] = props["DATA"].apply(conserta_data)
+    
     #acha lista de combinações ano/mês
     datas = list(set(list(props["DATA"])))
     meses = acha_meses(datas)
-
+    
     #pega arquivo de votos e retira abstenções e presidente
     votos = read_csv(path+"/atualizacao/camara/"+mandato+"/votos.csv",sep=";")
     votos = votos[votos.VOTO != 'ABSTENCAO']
@@ -253,5 +264,6 @@ def governismo_partido(mandato):
     with open (path+"/atualizacao/camara/"+mandato+"/medias_partido_mes.json","w",encoding='UTF8') as file:
         file.write(json.dumps(saida))
 
+#chame a função governismo_partido com 3 opções: lula1, lula2 e dilma
 governismo_partido("lula2")
 
