@@ -157,12 +157,12 @@ def acha_meses(datas):
     meses.sort()
     return meses
 
-def governismo_partido():
+def governismo_partido(mandato):
     #pega diretório do script para abrir os arquivos de votos e proposições
     path = os.path.dirname(os.path.abspath(__file__))
 
     #pega arquivo de proposições e conserta maiúsculas/minúsculas/acento
-    props = read_csv(path+"/atualizacao/camara/proposicoes.csv",sep=";")
+    props = read_csv(path+"/atualizacao/camara/"+mandato+"/proposicoes.csv",sep=";")
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
 
     #acha lista de combinações ano/mês
@@ -170,7 +170,7 @@ def governismo_partido():
     meses = acha_meses(datas)
 
     #pega arquivo de votos e retira abstenções e presidente
-    votos = read_csv(path+"/atualizacao/camara/votos.csv",sep=";")
+    votos = read_csv(path+"/atualizacao/camara/"+mandato+"/votos.csv",sep=";")
     votos = votos[votos.VOTO != 'ABSTENCAO']
     votos = votos[votos.VOTO != 'PRESIDENTE']
     votos['VOTO'] = votos['VOTO'].apply(conserta_voto)
@@ -250,9 +250,8 @@ def governismo_partido():
             saida[partido].append(item)
 
     #escreve Json de saída
-    with open ("medias_partido_mes.json","w",encoding='UTF8') as file:
+    with open (path+"/atualizacao/camara/"+mandato+"/medias_partido_mes.json","w",encoding='UTF8') as file:
         file.write(json.dumps(saida))
-    print(saida)
 
-governismo_partido()
+governismo_partido("lula2")
 
