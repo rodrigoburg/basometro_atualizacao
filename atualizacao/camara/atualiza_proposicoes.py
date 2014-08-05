@@ -163,8 +163,9 @@ def pega_dados_API_votacoes(proposicao):
 
     #agora ele pega todas as informações para cada votação ocorrida no ano
     for votacao_ in votacoes:
+        ano_votacao = votacao_["data"][-4:]
         #retira votações de outros anos
-        if votacao_["data"][-4:] == proposicao["ano_votacao"]:
+        if ano_votacao == proposicao["ano_votacao"]:
             votacao = {}
             votacao["data_votacao"] = votacao_["data"]
             votacao["hora_votacao"] = votacao_["hora"]
@@ -178,7 +179,12 @@ def pega_dados_API_votacoes(proposicao):
                 #essa votação e pega esses dados
                 votacao["orientacoes"] = { o["sigla"].strip() : o["orientacao"].strip()
                               for o in votacao_.orientacaobancada.findAll("bancada") }
-                votacao["orientacao_governo"] = votacao["orientacoes"].get("GOV.", "Não existe")
+                #se for no 2o governo FHC, a orientação do govenro é a orientação do PSDB
+                if ano_votacao in ["1999","2000","2001","2002"]:
+                    orientacao_governo = votacao["orientacoes"].get("PSDB", "Não existe")
+                else:
+                    orientacao_governo = votacao["orientacoes"].get("GOV.", "Não existe")
+                votacao["orientacao_governo"] = orientacao_governo
             except:
                 pass
 
@@ -318,7 +324,7 @@ def obter_proposicoes(ano):
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
-obter_proposicoes("2007")
-obter_proposicoes("2008")
-obter_proposicoes("2009")
-obter_proposicoes("2010")
+obter_proposicoes("1999")
+obter_proposicoes("2000")
+obter_proposicoes("2001")
+obter_proposicoes("2002")

@@ -55,17 +55,19 @@ def traduz_voto(voto):
 def traduz_partido(partido):
     partido = partido.strip()
     traducao = {
-        "Solidaried":"SDD"
+        "Solidaried":"SDD",
+        "PFL":"DEM"
     }
     if partido in traducao:
         return traducao[partido]
     else:
         return partido
 
-def limpar_votos():
+def limpar_votos(mandato):
+    path = os.path.dirname(os.path.abspath(__file__))
 
-    votos = read_csv("votos.csv",sep=";", dtype=object)
-    props = read_csv("proposicoes.csv",sep=";",dtype=object)
+    votos = read_csv(path+"/"+mandato+"/votos.csv",sep=";", dtype=object)
+    props = read_csv(path+"/"+mandato+"/proposicoes.csv",sep=";",dtype=object)
 
     #arruma nome dos deputados, partidos e votos
     votos["POLITICO"] = votos["POLITICO"].apply(traduz_nome)
@@ -78,13 +80,14 @@ def limpar_votos():
 
 
     #arruma o nome
-    votos.to_csv("votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-    props.to_csv("proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    votos.to_csv(path+"/"+mandato+"/votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    props.to_csv(path+"/"+mandato+"/proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
-def checa_deputado():
-    votos = read_csv("votos.csv",sep=";")
+def checa_deputado(mandato):
+    path = os.path.dirname(os.path.abspath(__file__))
+    votos = read_csv(path+"/"+mandato+"/votos.csv",sep=";")
     try:
-        politicos = read_csv("deputados.csv",sep=";")
+        politicos = read_csv(path+"/"+mandato+"/deputados.csv",sep=";")
     except OSError: #se não houver arquivo de deputados, cria um DF vazio
         colunas = ['POLITICO', 'NOME_CASA','PARTIDO',"UF",'ID',"ANO_MANDATO","LEGISLATURA","URL_FOTO"]
         politicos = DataFrame(columns=colunas)
@@ -106,9 +109,9 @@ def checa_deputado():
 
     print(partido)
     if (lista_politicos):
-        adiciona_deputados(lista_politicos,politicos,partido)
+        adiciona_deputados(lista_politicos,politicos,partido,mandato)
 
-def adiciona_deputados(lista_deputados,politicos,partido):
+def adiciona_deputados(lista_deputados,politicos,partido,mandato):
     #url principal e dados principais
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
@@ -174,11 +177,12 @@ def adiciona_deputados(lista_deputados,politicos,partido):
             politicos = politicos.append(deputado,ignore_index=True)
             print("Político adicionado: "+deputado["NOME_CASA"])
         
-    politicos.to_csv("deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    politicos.to_csv(path+"/"+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
-def checa_proposicoes():
-    votos = read_csv("votos.csv",sep=";")
-    props = read_csv("proposicoes.csv",sep=";")
+def checa_proposicoes(mandato):
+    path = os.path.dirname(os.path.abspath(__file__))
+    votos = read_csv(path+"/"+mandato+"/votos.csv",sep=";")
+    props = read_csv(path+"/"+mandato+"/proposicoes.csv",sep=";")
     for p in list(props["ID_VOTACAO"]):
         if not (p in list(votos["ID_VOTACAO"])):
             print(p)
@@ -187,8 +191,12 @@ def checa_proposicoes():
     #    if not (p in list(props["ID_VOTACAO"])):
     #        print("hue")
 
-limpar_votos()
-checa_proposicoes()
-checa_deputado()
+#lista de mandatos: fhc2,lula1,lula2,dilma
+
+mandato = "lula1"
+
+limpar_votos(mandato)
+checa_proposicoes(mandato)
+checa_deputado(mandato)
 
 #adiciona_deputado("SUBTENENTE GONZAGA")

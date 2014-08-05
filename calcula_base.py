@@ -157,14 +157,7 @@ def acha_meses(datas):
     meses.sort()
     return meses
 
-def conserta_data(data):
-    data = str(data)
-    if len(data) == 5:
-        return "0"+data
-    else:
-        return data
-    
-#chame a função governismo_partido com 3 opções: lula1, lula2 e dilma
+#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma
 def governismo_partido(mandato):
     #pega diretório do script para abrir os arquivos de votos e proposições
     path = os.path.dirname(os.path.abspath(__file__))
@@ -174,7 +167,7 @@ def governismo_partido(mandato):
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
     
     #transforma as datas em string e coloca zero na frente dos anos que perderam esse zero
-    props["DATA"] = props["DATA"].apply(conserta_data)
+    props["DATA"] = props["DATA"].apply(lambda d: "%06d" % d)
     
     #acha lista de combinações ano/mês
     datas = list(set(list(props["DATA"])))
@@ -243,6 +236,9 @@ def governismo_partido(mandato):
             #Se for o primeiro item da lista, só copia os valores
             #Salva a data no dicionário final
             item["date"] = aux_saida[partido][mes]["date"]
+            #arruma as datas da década de 1990
+            if item["date"][2] == "9":
+                item["date"] = "19" + item["date"][2:]
             #Inicializa um contador de "meses iterados"
             contador = 0
             soma_movel = 0
@@ -264,6 +260,6 @@ def governismo_partido(mandato):
     with open (path+"/atualizacao/camara/"+mandato+"/medias_partido_mes.json","w",encoding='UTF8') as file:
         file.write(json.dumps(saida))
 
-#chame a função governismo_partido com 3 opções: lula1, lula2 e dilma
-governismo_partido("lula2")
+#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma
+governismo_partido("fhc2")
 
