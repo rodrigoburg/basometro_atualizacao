@@ -193,7 +193,7 @@ def checa_proposicoes(mandato):
 
 #lista de mandatos: fhc2,lula1,lula2,dilma
 
-mandato = "lula1"
+mandato = "fhc2"
 
 limpar_votos(mandato)
 checa_proposicoes(mandato)

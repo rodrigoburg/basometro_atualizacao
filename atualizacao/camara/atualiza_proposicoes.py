@@ -181,7 +181,9 @@ def pega_dados_API_votacoes(proposicao):
                               for o in votacao_.orientacaobancada.findAll("bancada") }
                 #se for no 2o governo FHC, a orientação do govenro é a orientação do PSDB
                 if ano_votacao in ["1999","2000","2001","2002"]:
-                    orientacao_governo = votacao["orientacoes"].get("PSDB", "Não existe")
+                    #faz uma lista de um elemento com a orientação do PSDB (se houver)
+                    orientacoes_PSDB = [votacao["orientacoes"][k] for k in votacao["orientacoes"].keys() if "PSDB" in k]
+                    orientacao_governo = orientacoes_PSDB[0] if orientacoes_PSDB else "Não existe"
                 else:
                     orientacao_governo = votacao["orientacoes"].get("GOV.", "Não existe")
                 votacao["orientacao_governo"] = orientacao_governo

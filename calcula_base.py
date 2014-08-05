@@ -243,7 +243,7 @@ def governismo_partido(mandato):
             contador = 0
             soma_movel = 0
             total_local_votacoes = 0
-            while contador <= 3 and (indice - contador >= 0): #2 porque quero pegar os últimos 3 meses
+            while contador < 6 and (indice - contador >= 0): #2 porque quero pegar os últimos 6 meses
                 soma_movel += aux_saida[partido][meses[indice - contador]]["valor"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                 total_local_votacoes += aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                 contador+=1
