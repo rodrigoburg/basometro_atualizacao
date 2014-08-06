@@ -114,10 +114,10 @@ def calcula_deputados(props,votos):
         else:
             menos_de_50 +=1
 
-    print("Número total de deputados: "+str(len(lista_deputados)))
-    print("% que votou + de 90% com o governo: "+str(mais_de_90*100/len(lista_deputados)))
-    print("% que votou entre 50% e 90% com o governo: "+str(entre_50_e_90*100/len(lista_deputados)))
-    print("% que votou menos de 50% com o governo: "+str(menos_de_50*100/len(lista_deputados)))
+    #print("Número total de deputados: "+str(len(lista_deputados)))
+    #print("% que votou + de 90% com o governo: "+str(mais_de_90*100/len(lista_deputados)))
+    #print("% que votou entre 50% e 90% com o governo: "+str(entre_50_e_90*100/len(lista_deputados)))
+    #print("% que votou menos de 50% com o governo: "+str(menos_de_50*100/len(lista_deputados)))
 
 def faz_analise():
     props,votos = pega_arquivos()
@@ -136,13 +136,13 @@ def faz_analise():
 
     lista_codigos_props = list(set(lista_codigos))
 
-    for p in lista_codigos:
-        if p not in lista_codigos_votos:
-            print(p)
-    print("******")
-    for p in lista_codigos_votos:
-        if p not in lista_codigos:
-            print(p)
+    #for p in lista_codigos:
+        #if p not in lista_codigos_votos:
+            #print(p)
+    #print("******")
+    #for p in lista_codigos_votos:
+        #if p not in lista_codigos:
+            #print(p)
 
 def conserta_voto(voto):
     if voto == "Sim":
@@ -152,12 +152,12 @@ def conserta_voto(voto):
     else:
         return voto
 
-def acha_meses(datas):            
+def acha_meses(datas):
     meses = list(set([d[0:4] for d in datas]))
     meses.sort()
     return meses
 
-#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma
+#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma1
 def governismo_partido(mandato):
     #pega diretório do script para abrir os arquivos de votos e proposições
     path = os.path.dirname(os.path.abspath(__file__))
@@ -165,14 +165,14 @@ def governismo_partido(mandato):
     #pega arquivo de proposições e conserta maiúsculas/minúsculas/acento
     props = read_csv(path+"/atualizacao/camara/"+mandato+"/proposicoes.csv",sep=";")
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
-    
+
     #transforma as datas em string e coloca zero na frente dos anos que perderam esse zero
     props["DATA"] = props["DATA"].apply(lambda d: "%06d" % d)
-    
+
     #acha lista de combinações ano/mês
     datas = list(set(list(props["DATA"])))
     meses = acha_meses(datas)
-    
+
     #pega arquivo de votos e retira abstenções e presidente
     votos = read_csv(path+"/atualizacao/camara/"+mandato+"/votos.csv",sep=";")
     votos = votos[votos.VOTO != 'ABSTENCAO']
@@ -181,6 +181,8 @@ def governismo_partido(mandato):
 
     partidos = set(list(votos["PARTIDO"]))
     aux_saida = {}
+
+    proposicoes_por_mes = {}
 
     #agora faz os cálculos para o total dos deputaods, sem filtrar por partido
     aux_saida["Geral"] = {}
@@ -199,6 +201,9 @@ def governismo_partido(mandato):
                 item["valor"] = int(round(governismo[0]*100,0))
                 item["num_votacoes"] = governismo[1]
         aux_saida["Geral"][mes] = item
+
+        #"cálculo" do número de proposições existentes em cada mês
+        proposicoes_por_mes[item["date"]] = len(props_temp)
 
     #calcula o governismo para cada partido
     for partido in partidos:
@@ -224,7 +229,7 @@ def governismo_partido(mandato):
             aux_saida[partido][mes] = item
 
     saida = {}
-    
+
     #Cálculo da média móvel
     #Para cada partido faça....
     for partido in aux_saida:
@@ -257,9 +262,16 @@ def governismo_partido(mandato):
             saida[partido].append(item)
 
     #escreve Json de saída
-    with open (path+"/atualizacao/camara/"+mandato+"/medias_partido_mes.json","w",encoding='UTF8') as file:
+    with open (path+"/atualizacao/camara/"+mandato+"/hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as file:
         file.write(json.dumps(saida))
+    print("Histórico do mandato " + mandato + " salvo")
+    with open (path+"/atualizacao/camara/"+mandato+"/hist_totais_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as file:
+        file.write(json.dumps(proposicoes_por_mes))
+    print("Total de votações mensal do mandato " + mandato + " salvo")
 
-#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma
+#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma1
 governismo_partido("fhc2")
+governismo_partido("lula1")
+governismo_partido("lula2")
+governismo_partido("dilma1")
 
