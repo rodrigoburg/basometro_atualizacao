@@ -1,7 +1,9 @@
 import csv
-from pandas import DataFrame, read_csv
+import bz2
+from pandas import DataFrame, read_csv, Series
 import os
 import json
+import math
 
 def pega_arquivos():
     props = []
@@ -163,7 +165,7 @@ def governismo_partido(mandato):
     path = os.path.dirname(os.path.abspath(__file__))
 
     #pega arquivo de proposições e conserta maiúsculas/minúsculas/acento
-    props = read_csv(path+"/atualizacao/camara/"+mandato+"/proposicoes.csv",sep=";")
+    props = read_csv(path+"/atualizacao/camara/"+mandato+"/proposicoes.csv.bz2",sep=";", compression='bz2')
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
 
     #transforma as datas em string e coloca zero na frente dos anos que perderam esse zero
@@ -174,7 +176,7 @@ def governismo_partido(mandato):
     meses = acha_meses(datas)
 
     #pega arquivo de votos e retira abstenções e presidente
-    votos = read_csv(path+"/atualizacao/camara/"+mandato+"/votos.csv",sep=";")
+    votos = read_csv(path+"/atualizacao/camara/"+mandato+"/votos.csv.bz2",sep=";",compression = 'bz2')
     votos = votos[votos.VOTO != 'ABSTENCAO']
     votos = votos[votos.VOTO != 'PRESIDENTE']
     votos['VOTO'] = votos['VOTO'].apply(conserta_voto)
@@ -272,8 +274,110 @@ def governismo_partido(mandato):
     print("Total de votações mensal do mandato " + mandato + " salvo")
 
 #chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma1
-governismo_partido("fhc2")
-governismo_partido("lula1")
-governismo_partido("lula2")
-governismo_partido("dilma1")
+#governismo_partido("fhc2")
+#governismo_partido("lula1")
+#governismo_partido("lula2")
+#governismo_partido("dilma1")
+
+def cruza_votacao(votos,partido):
+    siglas = set(votos["PARTIDO"])
+
+    temp = votos[votos.PARTIDO == partido]
+
+    #se não estiver vazio
+    if not temp.empty:
+        votacao = {}
+        #acha qual é o voto que a maior parte do partido em questão votou
+        voto_maioria_partido = list(temp.groupby("VOTO").agg({"POLITICO":Series.nunique}).sort("POLITICO",ascending=0).index)[0]
+
+        #acha qual é o padrão de votacao desse partido
+        votos_contra = len(temp.index[temp.VOTO != voto_maioria_partido])
+        votos_pro = len(temp.index[temp.VOTO == voto_maioria_partido])
+
+        #agora calcula o mesmo padrão pra cada partido
+        for s in siglas:
+            temp = votos[votos.PARTIDO == s]
+            votos_contra = len(temp.index[temp.VOTO != voto_maioria_partido])
+            votos_pro = len(temp.index[temp.VOTO == voto_maioria_partido])
+            votacao[s] = {"favor": votos_pro, "contra": votos_contra}
+
+        return votacao
+
+    #se estiver vazio, volta vazio
+    return {}
+
+#            total_votos = len(temp.index)
+#            votos_pro = len(temp.index[temp.VOTO == voto_maioria_partido])
+#            taxa_partido = votos_pro/total_votos
+
+def adiciona_votacao(votacao,votacoes,partido):
+    #se não existir esse partido no arquivo de votacoes, adicione
+    if partido not in votacoes:
+        votacoes[partido] = {}
+
+    #para cada sigla existente na última votação
+    for sigla in votacao:
+
+        #se não existir essa sigla, adicione os votos a favor e contra
+        if sigla not in votacoes[partido]:
+            votacoes[partido][sigla] = {"favor":0,"contra":0}
+
+        votacoes[partido][sigla]["favor"] = votacoes[partido][sigla]["favor"] + votacao[sigla]["favor"]
+        votacoes[partido][sigla]["contra"] = votacoes[partido][sigla]["contra"] + votacao[sigla]["contra"]
+
+    return votacoes
+
+def calcula_semelhanca(votacoes):
+    semelhanca = {}
+    #para cada partido
+    for partido in votacoes:
+        semelhanca[partido] = {}
+        #o padrão é o numero de votos a favor dividido pelo total de votos
+        taxa_padrao = votacoes[partido][partido]["favor"] / (votacoes[partido][partido]["favor"] + votacoes[partido][partido]["contra"])
+        for sigla in votacoes[partido]:
+            #agora achamos a taxa da sigla, para depois compararmos ela com a padrão
+            taxa_sigla = votacoes[partido][sigla]["favor"] / (votacoes[partido][sigla]["favor"] + votacoes[partido][sigla]["contra"])
+            #a semelhança é uma regra de três da taxa da sigla com a taxa padrão, como se a padrão fosse 100% de semelhança
+            semelhanca[partido][sigla] = math.fabs((taxa_sigla * 100 / taxa_padrao) - 100)
+
+    return semelhanca
+
+
+def matriz_semelhanca(mandato):
+    #pega diretório do script para abrir os arquivos de votos e proposições
+    path = os.path.dirname(os.path.abspath(__file__))
+
+    #pega arquivo de votos e retira abstenções, obstruções e presidente
+    votos = read_csv(path+"/atualizacao/camara/"+mandato+"/votos.csv.bz2",sep=";",compression = 'bz2')
+    votos = votos[votos.VOTO != 'ABSTENCAO']
+    votos = votos[votos.VOTO != 'OBSTRUCAO']
+    votos = votos[votos.VOTO != 'PRESIDENTE']
+
+    #cria um dicionário com o formato d[partido][outro_partido]["favor"] e ["contra"], em que contamos os votos desse outro_partido a favor ou contra o que a maioria do partido original decidiu
+    votacoes = {}
+
+    #para cada votacao
+    for v in set(votos["ID_VOTACAO"]):
+        temp = votos[votos.ID_VOTACAO == v]
+        siglas = set(temp["PARTIDO"])
+        #para cada sigla que participou dessa votacao
+        for s in siglas:
+            votacao = cruza_votacao(temp,s)
+            if votacao:
+                votacoes = adiciona_votacao(votacao,votacoes,s)
+
+    #agora calculamos a semelhanca
+    semelhanca = calcula_semelhanca(votacoes)
+
+    saida = DataFrame.from_dict(semelhanca)
+    saida.to_csv(path+"/matriz_semelhanca.csv")
+
+#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma
+#governismo_partido("dilma")
+
+#matriz_semelhanca("dilma")
+
+#teste = {"teste":{"a":1,"b":2}}
+#saida = DataFrame.from_dict(teste)
+#print(saida)
 
