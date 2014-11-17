@@ -182,7 +182,7 @@ def governismo_partido(mandato):
     partidos = set(list(votos["PARTIDO"]))
     aux_saida = {}
 
-    proposicoes_por_mes = {}
+    proposicoes_por_mes = [["data","quantidade"]]
 
     #agora faz os cálculos para o total dos deputaods, sem filtrar por partido
     aux_saida["Geral"] = {}
@@ -203,7 +203,7 @@ def governismo_partido(mandato):
         aux_saida["Geral"][mes] = item
 
         #"cálculo" do número de proposições existentes em cada mês
-        proposicoes_por_mes[item["date"]] = len(props_temp)
+        proposicoes_por_mes.append([item["date"], len(props_temp)])
 
     #calcula o governismo para cada partido
     for partido in partidos:
@@ -257,16 +257,18 @@ def governismo_partido(mandato):
                 item["valor"] = int(round((soma_movel / total_local_votacoes),0))
             else:
                 item["valor"] = -1
-            print(partido,total_local_votacoes,soma_movel,aux_saida[partido][mes]["valor"], item["valor"])
+            #print(partido,total_local_votacoes,soma_movel,aux_saida[partido][mes]["valor"], item["valor"])
 
             saida[partido].append(item)
 
     #escreve Json de saída
-    with open (path+"/atualizacao/camara/"+mandato+"/hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as file:
-        file.write(json.dumps(saida))
+    with open (path+"/atualizacao/camara/"+mandato+"/hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as jsonfile:
+        jsonfile.write(json.dumps(saida))
     print("Histórico do mandato " + mandato + " salvo")
-    with open (path+"/atualizacao/camara/"+mandato+"/hist_totais_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as file:
-        file.write(json.dumps(proposicoes_por_mes))
+
+    with open (path+"/atualizacao/camara/"+mandato+"/hist_totais_"+mandato[:-1]+"_camara_"+mandato[-1]+".csv","w",encoding='UTF8') as afile:
+        csvfile = csv.writer(afile, delimiter=',')
+        csvfile.writerows(proposicoes_por_mes)
     print("Total de votações mensal do mandato " + mandato + " salvo")
 
 #chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma1
