@@ -372,8 +372,8 @@ def matriz_semelhanca(mandato):
     saida = DataFrame.from_dict(semelhanca)
     saida.to_csv(path+"/matriz_semelhanca.csv")
 
-#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma
-#governismo_partido("dilma")
+#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma1
+governismo_partido("dilma1")
 
 #matriz_semelhanca("dilma")
 

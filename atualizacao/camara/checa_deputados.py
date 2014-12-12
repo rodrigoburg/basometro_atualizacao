@@ -191,9 +191,9 @@ def checa_proposicoes(mandato):
     #    if not (p in list(props["ID_VOTACAO"])):
     #        print("hue")
 
-#lista de mandatos: fhc2,lula1,lula2,dilma
+#lista de mandatos: fhc2,lula1,lula2,dilma1
 
-mandato = "fhc2"
+mandato = "dilma1"
 
 limpar_votos(mandato)
 checa_proposicoes(mandato)
