@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 import csv
 
 def busca_novas_proposicoes(datas,prop_antigas):
+    lider_governo = "Ideli Salvatti" #"Eduardo Braga" #LIDER DO GOVERNO
+    
     contador = 0
     #para cada data
     for d in datas:
@@ -13,11 +15,14 @@ def busca_novas_proposicoes(datas,prop_antigas):
         url = "http://legis.senado.gov.br/dadosabertos/plenario/lista/votacao/"+d
         bs = BeautifulSoup(urlopen(url).read())
         lista_votacoes = bs.findAll("votacao")                    
+        num_votacoes = len(lista_votacoes)
+        if num_votacoes > 0:
+            print("Há "+str(num_votacoes)+ "votacoes")
         #para cada votação
         for v in lista_votacoes:
             #vê se há voto do líder do governo
             lista_votos = v.votos.findAll("votoparlamentar")
-            voto_lider_governo = [l.voto.string for l in lista_votos if l.nomeparlamentar.string == "Eduardo Braga"]
+            voto_lider_governo = [l.voto.string for l in lista_votos if l.nomeparlamentar.string == lider_governo]
             #se houver
             if voto_lider_governo:
                 codigo = v.codigosessaovotacao.string
@@ -42,6 +47,7 @@ def busca_novas_proposicoes(datas,prop_antigas):
                             voto["politicos"].append(l.nomeparlamentar.string)
                             voto["votos"].append(traduz_voto(l.voto.string))
                             voto["partidos"].append(l.siglapartido.string)
+                            print(voto["partidos"])
                         
                         prop_antigas.append(codigo)
 
@@ -49,6 +55,7 @@ def busca_novas_proposicoes(datas,prop_antigas):
                         escreveu = escreve_resultado(voto)
                         if escreveu:
                             contador = contador + 1
+                            print("Prop adicionada!")
     
     print("Foram adicionadas "+str(contador)+" novas proposições ao arquivo.")
                         
@@ -197,5 +204,6 @@ def atualiza_votacoes(data_inicio,data_fim):
     votacoes = busca_novas_proposicoes(datas,prop_antigas)
     
 
-atualiza_votacoes("01012011","10072014")
+atualiza_votacoes("01012004","01072004")
+
     

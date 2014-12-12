@@ -5,21 +5,25 @@ import csv
 from datetime import datetime
 from pandas import DataFrame
 import re
+import os
 
 def pega_orientacoes():
     try: 
-        with open("orientacoes.csv","r") as file:
-            arquivo = csv.reader(file)
+        path = os.path.dirname(os.path.abspath(__file__))
+        with open(path+"/atualizacao/camara/dilma/orientacoes.csv","r") as file:
+            arquivo = csv.reader(file,delimiter=";")
             cod_votacao = []
             bancada = []
             orientacao = []
             data = []
             
+            validos = ["SIM","NAO","OBSTRUCAO"]
             for row in arquivo:
-                cod_votacao.append(row[0])
-                data.append(row[1])
-                bancada.append(row[3])
-                orientacao.append(row[4])         
+                if row[4].upper() in validos:
+                    cod_votacao.append(row[0])
+                    data.append(row[1])
+                    bancada.append(row[3])
+                    orientacao.append(row[4])         
             
             orientacoes = {}
             for i in range(len(cod_votacao)):
@@ -66,18 +70,22 @@ def conserta_bancada(bancada):
             
 def pega_votos():
     try:
-        with open("votos.csv","r") as file:
-            arquivo = csv.reader(file)
+        path = os.path.dirname(os.path.abspath(__file__))
+        with open(path+"/atualizacao/camara/dilma/votos.csv","r") as file:
+            arquivo = csv.reader(file,delimiter=";")
             next(arquivo, None)  # ignora o cabeçalho
             
             cod_votacao = []
             partido = []
             voto = []
             
+            validos = ["SIM","NAO","OBSTRUCAO"]
+            
             for row in arquivo:
-                cod_votacao.append(row[0])
-                partido.append(row[3])
-                voto.append(row[4])
+                if row[2].upper() in validos:
+                    cod_votacao.append(row[0])
+                    partido.append(row[3])
+                    voto.append(row[2])
             
             votos = {}
             
@@ -121,21 +129,22 @@ def calcula_fidelidade(votacoes):
             orientacao = v["orientacao"][b]
             partidos = v["partido"]
             votos = v["votos"]
-            if orientacao != "Liberado":
+            if orientacao.upper() != "LIBERADO":
                 if bancada not in resultado:
                     resultado[bancada] = []
                     num_votacoes[bancada] = 0
-                voto = calcula_voto(key,bancada,orientacao,partidos,votos)
+                voto = calcula_voto(bancada,orientacao,partidos,votos)
                 if voto:
-                    resultado[bancada].append(voto)
+                    resultado[bancada] = resultado[bancada] + voto
                     num_votacoes[bancada] +=1
     
     for key in resultado:
-        resultado[key] = mean("baba",resultado[key])
+        resultado[key] = mean(resultado[key])
 
     return resultado,num_votacoes
 
-def calcula_voto(key,bancada,orientacao,partidos,votos):
+def calcula_voto(bancada,orientacao,partidos,votos):
+   # print(votos)
     lista_votos=[]
     for p in range(len(partidos)):
         if partidos[p] == bancada:
@@ -144,16 +153,14 @@ def calcula_voto(key,bancada,orientacao,partidos,votos):
             else:
                 lista_votos.append(0)
     
-    if not lista_votos:
-        return False
-    else:
-        return mean(bancada,lista_votos)
+    return lista_votos
 
-def mean(bancada,lista):
+def mean(lista):
     if(lista):
         return float(sum(lista))/len(lista)
     else:
         return 0 
+        
 def arruma_resultado(resultado_velho,num_votacoes):
     resultado = DataFrame({"partido":list(resultado_velho.keys()),"fidelidade_interna":list(resultado_velho.values()),"num_votacoes":list(num_votacoes.values())})
     resultado = resultado.sort("fidelidade_interna",ascending=False)
@@ -189,8 +196,8 @@ def faz_consulta(datas):
     todos_partidos = set(todos_partidos)
     
     novas_datas = [d[0] + "-" + d[1] for d in datas]
-    
-    with open("analise_fidelidade_interna.csv", "w+", encoding='UTF8') as saida:
+    path = os.path.dirname(os.path.abspath(__file__))
+    with open(path+"/atualizacao/camara/dilma/analise_fidelidade_interna.csv", "w+", encoding='UTF8') as saida:
         linha = []
         header = ["partido"] + novas_datas
         escreve_res = csv.writer(saida, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
@@ -233,5 +240,16 @@ datas = [
     ["01/01/2013","30/06/2013"],
     ["01/07/2013","31/12/2013"]
     ]
+
+datas = [
+    ["01/01/2011","30/06/2011"],
+    ["01/07/2011","31/12/2011"],
+    ["01/01/2012","30/06/2012"],
+    ["01/07/2012","31/12/2012"],
+    ["01/01/2013","30/06/2013"],
+    ["01/07/2013","31/12/2013"],
+    ["01/01/2014","30/06/2014"],
+    ["01/01/2011","30/06/2014"]
+]
 
 faz_consulta(datas)

@@ -326,7 +326,4 @@ def obter_proposicoes(ano):
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
-obter_proposicoes("1999")
-obter_proposicoes("2000")
-obter_proposicoes("2001")
-obter_proposicoes("2002")
+obter_proposicoes("2014")

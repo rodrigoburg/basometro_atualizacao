@@ -72,10 +72,6 @@ def calcula_governismo(props,df_votos,tamanho=False):
     except ZeroDivisionError:
         return None
 
-#    print("Número de votações: "+str(len(resultado)))
-#    print("Taxa de governismo: "+str(governismo))
-
-
 def calcula_deputados(props,votos):
     df_votos = DataFrame(votos)
     df_props = DataFrame(props)
@@ -357,10 +353,6 @@ def matriz_semelhanca(mandato):
 
 #chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma
 #governismo_partido("dilma")
-
 #matriz_semelhanca("dilma")
 
-teste = {"teste":{"a":1,"b":2}}
-saida = DataFrame.from_dict(teste)
-print(saida)
 
