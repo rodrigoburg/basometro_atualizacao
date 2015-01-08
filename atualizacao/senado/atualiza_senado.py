@@ -4,10 +4,9 @@ from datetime import date, datetime, timedelta as td
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import csv
+import os
 
 def busca_novas_proposicoes(datas,prop_antigas):
-    lider_governo = "Ideli Salvatti" #"Eduardo Braga" #LIDER DO GOVERNO
-    
     contador = 0
     #para cada data
     for d in datas:
@@ -20,8 +19,13 @@ def busca_novas_proposicoes(datas,prop_antigas):
             print("Há "+str(num_votacoes)+ "votacoes")
         #para cada votação
         for v in lista_votacoes:
-            #vê se há voto do líder do governo
-            lista_votos = v.votos.findAll("votoparlamentar")
+            try:
+                #vê se há voto do líder do governo
+                lista_votos = v.votos.findAll("votoparlamentar")
+            except:
+                print("Erro na votação!")
+                print(url)
+                continue
             voto_lider_governo = [l.voto.string for l in lista_votos if l.nomeparlamentar.string == lider_governo]
             #se houver
             if voto_lider_governo:
@@ -47,7 +51,6 @@ def busca_novas_proposicoes(datas,prop_antigas):
                             voto["politicos"].append(l.nomeparlamentar.string)
                             voto["votos"].append(traduz_voto(l.voto.string))
                             voto["partidos"].append(l.siglapartido.string)
-                            print(voto["partidos"])
                         
                         prop_antigas.append(codigo)
 
@@ -101,7 +104,7 @@ def cria_lista_datas(data_inicio,data_fim):
 def importa_proposicoes_antigas():
     prop_antigas = []
     try:
-        with open("senado_votacoes.csv","r") as file:
+        with open(path+"senado_votacoes.csv","r") as file:
             arquivo = csv.reader(file, delimiter=";")
             next(arquivo, None)  # ignora o cabeçalho
             for row in arquivo:
@@ -112,8 +115,8 @@ def importa_proposicoes_antigas():
     return prop_antigas
 
 def cria_arquivo_vazio():
-    with open("senado_votacoes.csv", "w", encoding='UTF8') as prop_saida,\
-    open("senado_votos.csv", "w", encoding='UTF8') as voto_saida:
+    with open(path+"senado_votacoes.csv", "w", encoding='UTF8') as prop_saida,\
+    open(path+"senado_votos.csv", "w", encoding='UTF8') as voto_saida:
         escreve_prop = csv.writer(
             prop_saida,
             delimiter=';',
@@ -148,8 +151,8 @@ def cria_arquivo_vazio():
             
 def escreve_resultado(v):
     escreveu = False
-    with open("senado_votacoes.csv", "a", encoding='UTF8') as prop_saida,\
-    open("senado_votos.csv", "a", encoding='UTF8') as voto_saida:
+    with open(path+"senado_votacoes.csv", "a", encoding='UTF8') as prop_saida,\
+    open(path+"senado_votos.csv", "a", encoding='UTF8') as voto_saida:
         escreve_prop = csv.writer(
             prop_saida,
             delimiter=';',
@@ -191,6 +194,7 @@ def escreve_resultado(v):
     return escreveu
     
 def atualiza_votacoes(data_inicio,data_fim):
+    descompactar_arquivos()
 
     #cria lista com dias para se fazer a busca
     datas = cria_lista_datas(data_inicio, data_fim)
@@ -202,8 +206,17 @@ def atualiza_votacoes(data_inicio,data_fim):
 
     #busca as votações e escreve
     votacoes = busca_novas_proposicoes(datas,prop_antigas)
+    compactar_arquivos()
     
 
-atualiza_votacoes("01012004","01072004")
+def descompactar_arquivos():
+    os.system("bzip2 -d "+path+"*")
 
+def compactar_arquivos():
+    os.system("bzip2 -z "+path+"*.csv")    
+
+path = os.path.dirname(os.path.abspath(__file__))+"/"
+lider_governo = "Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
+atualiza_votacoes("18122014","31122014")
+#descompactar_arquivos()
     

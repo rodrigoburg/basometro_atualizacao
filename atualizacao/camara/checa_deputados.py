@@ -180,7 +180,6 @@ def adiciona_deputados(lista_deputados,politicos,partido,mandato):
     politicos.to_csv(path+"/"+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def checa_proposicoes(mandato):
-    path = os.path.dirname(os.path.abspath(__file__))
     votos = read_csv(path+"/"+mandato+"/votos.csv",sep=";")
     props = read_csv(path+"/"+mandato+"/proposicoes.csv",sep=";")
     for p in list(props["ID_VOTACAO"]):
@@ -191,12 +190,20 @@ def checa_proposicoes(mandato):
     #    if not (p in list(props["ID_VOTACAO"])):
     #        print("hue")
 
-#lista de mandatos: fhc2,lula1,lula2,dilma
 
-mandato = "fhc2"
+def descompactar_arquivos(mandato):
+    os.system("bzip2 -d "+path+"/"+mandato+"/*")
 
+def compactar_arquivos(mandato):
+    os.system("bzip2 -z "+path+"/"+mandato+"/*")
+
+
+#lista de mandatos: fhc2,lula1,lula2,dilma1,dilma2
+mandato = "dilma1"
+path = os.path.dirname(os.path.abspath(__file__))
+
+descompactar_arquivos(mandato)
 limpar_votos(mandato)
 checa_proposicoes(mandato)
 checa_deputado(mandato)
-
-#adiciona_deputado("SUBTENENTE GONZAGA")
+compactar_arquivos(mandato):

@@ -28,15 +28,15 @@ import csv
 import time
 from datetime import datetime as dt
 import os
+import bz2
+import codecs
 
 
 def existe_arquivo_proposicoes():
-    path = os.path.dirname(os.path.abspath(__file__))
-    
     #""" Checa se há arquivo de proposicoes no diretório local. se houver,
     #    ele já retorna esse arquivo"""
     try:
-        with open("proposicoes.csv", "r") as file:
+        with open(path+"proposicoes.csv", "r") as file:
             return file
     except IOError:
         print("Não há arquivo de votações no diretório local.")
@@ -46,7 +46,7 @@ def existe_arquivo_proposicoes():
 def cria_arquivo_vazio_proposicoes():
     #""" Cria um arquivo vazio de proposicoes caso não exista
     #    no diretório local"""
-    with open("proposicoes.csv", "w", encoding='UTF8') as file:
+    with open(path+"proposicoes.csv", "w", encoding='UTF8') as file:
         writer = csv.writer(
             file,
             delimiter=';',
@@ -68,7 +68,7 @@ def cria_arquivo_vazio_proposicoes():
 def existe_arquivo_votos():
     #""" Checa se há arquivo de votos no diretório local"""
     try:
-        with open("votos.csv", "r") as arquivo:
+        with open(path+"votos.csv", "r") as arquivo:
             return arquivo
     except IOError:
         print("Não há arquivo de votos no diretório local.")
@@ -77,7 +77,7 @@ def existe_arquivo_votos():
 
 def cria_arquivo_vazio_votos():
     #""" Cria um arquivo vazio de votos caso não exista no diretório local"""
-    with open("votos.csv", "w", encoding='UTF8') as file:
+    with open(path+"votos.csv", "w", encoding='UTF8') as file:
         writer = csv.writer(
             file,
             delimiter=';',
@@ -94,7 +94,7 @@ def busca_proposicoes_antigas(ano):
     #    estão no arquivo local, no ano pesquisado"""
 
     prop_antigas = []
-    with open("proposicoes.csv", "r") as file:
+    with open(path+"proposicoes.csv", "r") as file:
         arquivo = csv.reader(file,delimiter = ";")
         next(arquivo, None)  # ignora o cabeçalho
         for row in arquivo:
@@ -228,9 +228,9 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
     #    que não estiverem já listados no csv antigo"""
     contador = 0
     #prepara os dois arquivos de saída
-    with open("proposicoes.csv", "a", encoding='UTF8') as prop_saida,\
-            open("votos.csv", "a", encoding='UTF8') as voto_saida,\
-            open("orientacoes.csv","a",encoding='UTF8') as orientacao_saida:
+    with open(path+"proposicoes.csv", "a", encoding='UTF8') as prop_saida,\
+            open(path+"votos.csv", "a", encoding='UTF8') as voto_saida,\
+            open(path+"orientacoes.csv","a",encoding='UTF8') as orientacao_saida:
 
         escreve_prop = csv.writer(
             prop_saida,
@@ -311,6 +311,9 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
 def obter_proposicoes(ano):
     #"""obtem todas as proposições votadas em um determinado ano
     #    articulando as funções anteriores"""
+    descompactar_arquivos(mandato)
+    ano = str(ano)
+
     print("Atualizando proposições de: "+ano)
 
     prop_antigas = []
@@ -325,5 +328,27 @@ def obter_proposicoes(ano):
 
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
+    compactar_arquivos(mandato)
+    
 
-obter_proposicoes("2014")
+def acha_mandato(ano):
+    if ano in [2003,2004,2005,2006]:
+        return "lula1"
+    elif ano in [2007,2008,2009,2010]:
+        return "lula2"
+    elif ano in [2011,2012,2013,2014]:
+        return "dilma1"
+    elif ano in [2015,2016,2017,2018]:
+        return "dilma2"
+ 
+def descompactar_arquivos(mandato):
+    os.system("bzip2 -d "+path+"*")
+
+def compactar_arquivos(mandato):
+    os.system("bzip2 -z "+path+"*")    
+
+#variaveis globais e chamada necessária
+ano = 2014
+mandato = acha_mandato(ano)
+path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
+obter_proposicoes(ano)
