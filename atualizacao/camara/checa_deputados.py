@@ -184,6 +184,7 @@ def checa_proposicoes(mandato):
     props = read_csv(path+"/"+mandato+"/proposicoes.csv",sep=";")
     for p in list(props["ID_VOTACAO"]):
         if not (p in list(votos["ID_VOTACAO"])):
+            print("Essa votação está no arquivo de votações mas não no de votos")
             print(p)
 
     #for p in list(votos["ID_VOTACAO"]):
