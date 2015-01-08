@@ -352,3 +352,4 @@ ano = 2014
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 obter_proposicoes(ano)
+
