@@ -217,6 +217,6 @@ def compactar_arquivos():
 
 path = os.path.dirname(os.path.abspath(__file__))+"/"
 lider_governo = "Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
-atualiza_votacoes("18122014","31122014")
+atualiza_votacoes("01012011","31122014")
 #descompactar_arquivos()
     

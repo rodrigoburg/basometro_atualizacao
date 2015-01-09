@@ -198,13 +198,32 @@ def descompactar_arquivos(mandato):
 def compactar_arquivos(mandato):
     os.system("bzip2 -z "+path+"/"+mandato+"/*")
 
-
+def deputados_hoje():
+#    url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
+    url = "file://"+path+"/Deputados.xml"
+    dados = BeautifulSoup(urlopen(url).read())
+    deputados = dados.findAll("deputado")
+    print(len(deputados))
+    gabinetes = []
+    for d in deputados:
+        print(d)
+        gab = d.gabinete.string
+        if gab not in gabinetes:
+            gabinetes.append(gab)
+        else:
+            print(gab)
+            if gab:
+                print("Gabinete repetido! "+gab)
+    print(gabinetes)
+    print(len(gabinetes))
+    
 #lista de mandatos: fhc2,lula1,lula2,dilma1,dilma2
 mandato = "dilma1"
 path = os.path.dirname(os.path.abspath(__file__))
 
-descompactar_arquivos(mandato)
-limpar_votos(mandato)
-checa_proposicoes(mandato)
-checa_deputado(mandato)
-compactar_arquivos(mandato):
+#descompactar_arquivos(mandato)
+#limpar_votos(mandato)
+#checa_proposicoes(mandato)
+#checa_deputado(mandato)
+#compactar_arquivos(mandato):
+deputados_hoje()
