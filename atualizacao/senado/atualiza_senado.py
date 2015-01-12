@@ -67,12 +67,21 @@ def traduz_voto(voto):
     voto = voto.strip()
     traducao = {
         "Presidente (art. 51 RISF)":"PRESIDENTE",
+        "Sim - Presidente Art.48 inciso XXIII":"SIM",
         "Sim":"SIM",
         "Não":"NAO",
         "P-NRV":"NAO VOTOU",
         "LS":"NAO VOTOU",
+        "NA":"NAO VOTOU",
         "LP":"NAO VOTOU",
         "AP":"NAO VOTOU",
+        "LAP":"NAO VOTOU",
+        "MIS":"NAO VOTOU",
+        "NCom":"NAO VOTOU",
+        "Obstrução":"OBSTRUCAO",
+        "P-OD":"OBSTRUCAO",
+        "PSF":"NAO VOTOU",
+        "REP":"NAO VOTOU",
         "Abstenção":"NAO VOTOU"        
     }
     
@@ -121,13 +130,13 @@ def cria_arquivo_vazio():
             prop_saida,
             delimiter=';',
             quotechar='"',
-            quoting=csv.QUOTE_ALL)
+            quoting=csv.QUOTE_NONNUMERIC)
 
         escreve_voto = csv.writer(
             voto_saida,
             delimiter=';',
             quotechar='"',
-            quoting=csv.QUOTE_ALL)
+            quoting=csv.QUOTE_NONNUMERIC)
                     
         escreve_prop.writerow([
             "ID_VOTACAO",
@@ -157,13 +166,13 @@ def escreve_resultado(v):
             prop_saida,
             delimiter=';',
             quotechar='"',
-            quoting=csv.QUOTE_ALL)
+            quoting=csv.QUOTE_NONNUMERIC)
 
         escreve_voto = csv.writer(
             voto_saida,
             delimiter=';',
             quotechar='"',
-            quoting=csv.QUOTE_ALL)
+            quoting=csv.QUOTE_NONNUMERIC)
     
         if v["orientacao_governo"] in ["SIM","NAO"]:
             escreveu = True
@@ -218,5 +227,5 @@ def compactar_arquivos():
 path = os.path.dirname(os.path.abspath(__file__))+"/"
 lider_governo = "Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
 atualiza_votacoes("01012011","31122014")
-#descompactar_arquivos()
+#compactar_arquivos()
     
