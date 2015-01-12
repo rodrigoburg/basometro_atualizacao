@@ -164,6 +164,7 @@ def adiciona_deputados(lista_deputados,politicos,partido,mandato):
         #se não tiver nem no arquivo local, só adicione um deputado incognita no arquivo de deputados
         
         if not deputado:
+            print("Erro no deputado: "+d)
             deputado["POLITICO"] =  d
             deputado["NOME_CASA"] = d
             deputado["PARTIDO"] = partido[d]
@@ -221,9 +222,9 @@ def deputados_hoje():
 mandato = "dilma1"
 path = os.path.dirname(os.path.abspath(__file__))
 
-#descompactar_arquivos(mandato)
-#limpar_votos(mandato)
-#checa_proposicoes(mandato)
-#checa_deputado(mandato)
-#compactar_arquivos(mandato):
-deputados_hoje()
+descompactar_arquivos(mandato)
+limpar_votos(mandato)
+checa_proposicoes(mandato)
+checa_deputado(mandato)
+compactar_arquivos(mandato)
+#deputados_hoje()
