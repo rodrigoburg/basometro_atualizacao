@@ -23,7 +23,7 @@ def limpar_votos():
     votos = read_csv(path+"senado_votos.csv",sep=";")
     votos["POLITICO"] = votos["POLITICO"].apply(remover_acentos)
     votos.to_csv(path+"senado_votos.csv",sep=";",index=False)
-    
+
 def testa_voto():
     votos = read_csv(path+"senado_votos.csv",sep=";")
     politicos = read_csv(path+"senadores.csv",sep=";")
@@ -36,10 +36,10 @@ def testa_voto():
     lista_politicos = list(set(lista_politicos))
     print("Estão faltando "+str(len(lista_politicos)) + " senadores no arquivo de políticos.")
     print(lista_politicos)
-    
+
     if len(lista_politicos) > 0:
         acha_senador(lista_politicos)
-                    
+
 
 def acha_senador(senadores):
     politicos = read_csv(path+"senadores.csv",sep=";")
@@ -63,18 +63,18 @@ def acha_senador(senadores):
                 politicos = politicos.append(senador,ignore_index=True)
                 print("Adicionado político: "+nome)
     politicos.to_csv(path+"senadores.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-        
+
 
 def descompactar_arquivos():
     os.system("bzip2 -d "+path+"*")
 
 def compactar_arquivos():
-    os.system("bzip2 -z "+path+"*.csv")    
-        
-    
+    os.system("bzip2 -z "+path+"*.csv")
+
+
 path = os.path.dirname(os.path.abspath(__file__))+"/"
 
-descompactar_arquivos()    
+descompactar_arquivos()
 limpar_votos()
 testa_voto()
 compactar_arquivos()

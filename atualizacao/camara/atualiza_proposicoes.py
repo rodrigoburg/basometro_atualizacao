@@ -30,11 +30,23 @@ from datetime import datetime as dt
 import os
 import bz2
 import codecs
+import json
+import io
 
+TIPOS_DE_VOTOS = {
+        'NAO': 0,
+        'SIM': 1,
+        'ABSTENCAO': 2,
+        'OBSTRUCAO': 3,
+        'NAO VOTOU': 4,
+        'PRESIDENTE': 5
+    }
+
+csv.register_dialect('basometro', delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
 
 def existe_arquivo_proposicoes():
-    #""" Checa se há arquivo de proposicoes no diretório local. se houver,
-    #    ele já retorna esse arquivo"""
+    """ Checa se há arquivo de proposicoes no diretório local. se houver,
+        ele já retorna esse arquivo"""
     try:
         with open(path+"proposicoes.csv", "r") as file:
             return file
@@ -44,8 +56,8 @@ def existe_arquivo_proposicoes():
 
 
 def cria_arquivo_vazio_proposicoes():
-    #""" Cria um arquivo vazio de proposicoes caso não exista
-    #    no diretório local"""
+    """ Cria um arquivo vazio de proposicoes caso não exista
+        no diretório local"""
     with open(path+"proposicoes.csv", "w", encoding='UTF8') as file:
         writer = csv.writer(
             file,
@@ -66,7 +78,7 @@ def cria_arquivo_vazio_proposicoes():
 
 
 def existe_arquivo_votos():
-    #""" Checa se há arquivo de votos no diretório local"""
+    """ Checa se há arquivo de votos no diretório local"""
     try:
         with open(path+"votos.csv", "r") as arquivo:
             return arquivo
@@ -76,7 +88,7 @@ def existe_arquivo_votos():
 
 
 def cria_arquivo_vazio_votos():
-    #""" Cria um arquivo vazio de votos caso não exista no diretório local"""
+    """ Cria um arquivo vazio de votos caso não exista no diretório local"""
     with open(path+"votos.csv", "w", encoding='UTF8') as file:
         writer = csv.writer(
             file,
@@ -90,8 +102,8 @@ def cria_arquivo_vazio_votos():
 
 
 def busca_proposicoes_antigas(ano):
-    #""" Retorna uma lista com os códigos de todas as proposições que
-    #    estão no arquivo local, no ano pesquisado"""
+    """ Retorna uma lista com os códigos de todas as proposições que
+        estão no arquivo local, no ano pesquisado"""
 
     prop_antigas = []
     with open(path+"proposicoes.csv", "r") as file:
@@ -107,9 +119,10 @@ def busca_proposicoes_antigas(ano):
               " no arquivo salvo.")
         return prop_antigas
 
+
 def pega_todas_proposicoes(ano):
-    # Função que busca o API da Câmara e retorna o XML
-    #    de todas as votações de um determinado ano"""
+    """ Função que busca o API da Câmara e retorna o XML
+        de todas as votações de um determinado ano"""
     url = "http://www.camara.gov.br/SitCamaraWS/Proposicoes.asmx/ListarProposicoesVotadasEmPlenario?ano=" + ano + "&tipo="
     connection = urlopen(url)
     data = connection.read()
@@ -123,15 +136,15 @@ def pega_todas_proposicoes(ano):
 
 
 def obter_dados_proposicao(prop):
-    #"""Função que pega os dados extras de cada proposição,
-    #    por meio de duas consultas diferentes"""
+    """Função que pega os dados extras de cada proposição,
+        por meio de duas consultas diferentes"""
     prop = pega_dados_API_proposicao(prop)
     prop = pega_dados_API_votacoes(prop)
     return prop
 
 
 def pega_dados_API_proposicao(prop):
-    #"""Pega os dados da proposicao de acordo com a API de proposicoes"""
+    """Pega os dados da proposicao de acordo com a API de proposicoes"""
     url = "http://www.camara.gov.br/SitCamaraWS/Proposicoes.asmx/ObterProposicaoPorID?IdProp=" + prop["codigo"]
     connection = urlopen(url)
     data = connection.read()
@@ -150,7 +163,7 @@ def pega_dados_API_proposicao(prop):
 
 
 def pega_dados_API_votacoes(proposicao):
-    #"""Pega os dados da proposicao de acordo com a API de proposicoes"""
+    """Pega os dados da proposicao de acordo com a API de proposicoes"""
     url = "http://www.camara.gov.br/SitCamaraWS/Proposicoes.asmx/ObterVotacaoProposicao?tipo=" + proposicao["tipo"] + "&numero=" + proposicao["numero"] + "&ano=" + proposicao["ano"]
     proposicao["votacoes"] = []
     try:
@@ -206,26 +219,30 @@ def pega_dados_API_votacoes(proposicao):
 
     return proposicao
 
+
 def media_algarismos(numero):
     soma = 0
     for i in numero:
         soma += int(i)
     return str(int(soma/len(numero)))
 
+
 def codigo_votacao(votacao,codigo_proposicao):
-    #Gera um código único para cada votação
+    """Gera um código único para cada votação"""
     return hashlib.md5((votacao["data_votacao"]+votacao["hora_votacao"]+votacao["resumo"]+codigo_proposicao).encode()).hexdigest()
 
+
 def parse_data_votacao(votacao):
-    #recupera a data da votação
+    """recupera a data da votação"""
     data = votacao["data_votacao"].split("/")
     data = data[2][2:4] + "%02d" % int(data[1]) + "%02d" % int(data[0])
     #cria código para a data e hora
     return data
 
+
 def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
-    #"""De acordo com a consulta na API, grava as novas proposicoes
-    #    que não estiverem já listados no csv antigo"""
+    """De acordo com a consulta na API, grava as novas proposicoes
+        que não estiverem já listados no csv antigo"""
     contador = 0
     #prepara os dois arquivos de saída
     with open(path+"proposicoes.csv", "a", encoding='UTF8') as prop_saida,\
@@ -309,9 +326,9 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
 
 
 def obter_proposicoes(ano):
-    #"""obtem todas as proposições votadas em um determinado ano
-    #    articulando as funções anteriores"""
-    descompactar_arquivos(mandato)
+    """obtem todas as proposições votadas em um determinado ano
+        articulando as funções anteriores"""
+    descompactar_arquivos()
     ano = str(ano)
 
     print("Atualizando proposições de: "+ano)
@@ -328,8 +345,8 @@ def obter_proposicoes(ano):
 
     proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
-    compactar_arquivos(mandato)
-    
+    compactar_arquivos()
+
 
 def acha_mandato(ano):
     if ano in [2003,2004,2005,2006]:
@@ -340,16 +357,73 @@ def acha_mandato(ano):
         return "dilma1"
     elif ano in [2015,2016,2017,2018]:
         return "dilma2"
- 
-def descompactar_arquivos(mandato):
-    os.system("bzip2 -d "+path+"*")
 
-def compactar_arquivos(mandato):
-    os.system("bzip2 -z "+path+"*")    
+
+def gera_json_basometro():
+    descompactar_arquivos()
+    saida = {'politicos':{},'votacoes':{},'votos':[]}
+
+    politicos_nao_encontrados = set()
+    votos_com_problema = set()
+
+    # Populando com a lista de políticos
+    with open(path + 'deputados.csv', 'r') as p:
+        reader = csv.DictReader(p, dialect='basometro')
+        for row in reader:
+            saida['politicos'][row['NOME_CASA']] = row
+            del saida['politicos'][row['NOME_CASA']]['NOME_CASA']
+
+    #Populando com as votações
+    with open(path + 'proposicoes.csv', 'r') as p:
+        reader = csv.DictReader(p, dialect='basometro')
+        for row in reader:
+            saida['votacoes'][row['ID_VOTACAO']] = row
+            del saida['votacoes'][row['ID_VOTACAO']]['ID_VOTACAO']
+
+    #Populando Votos e verificando
+    with open(path + 'votos.csv') as v:
+        reader = csv.DictReader(v, dialect='basometro')
+        for row in reader:
+            if not saida['politicos'][row['POLITICO']]:
+                politicos_nao_encontrados.add(row['POLITICO'])
+            if row['VOTO'] not in TIPOS_DE_VOTOS:
+                votos_com_problema.add(row)
+            voto = [saida['politicos'][row['POLITICO']]['ID'],row['ID_VOTACAO'],row['PARTIDO'],TIPOS_DE_VOTOS[row['VOTO']]]
+            saida['votos'].append(voto)
+
+    if len(politicos_nao_encontrados) > 0:
+        print("#############################################")
+        print("Políticos não encontrados:")
+        for pol in politicos_nao_encontrados:
+            print(pol)
+
+    if len(votos_com_problema) > 0:
+        print("")
+        print("#############################################")
+        print("Votos com problemas")
+        for voto in votos_com_problema:
+            print(voto)
+
+    with io.open(path + mandato + '_camara.json', 'w', encoding="utf8") as f:
+        json.dump(saida, f, ensure_ascii=False)
+
+    print("Geração de JSON termianda")
+
+    compactar_arquivos()
+
+
+def descompactar_arquivos():
+    os.system("bunzip2 "+path+"*.bz2")
+
+
+def compactar_arquivos():
+    os.system("bzip2 -9 "+path+"*.csv *.json")
+
 
 #variaveis globais e chamada necessária
 ano = 2014
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
-obter_proposicoes(ano)
+#obter_proposicoes(ano)
+gera_json_basometro()
 
