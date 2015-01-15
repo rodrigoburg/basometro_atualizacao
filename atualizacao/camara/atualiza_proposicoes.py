@@ -32,6 +32,7 @@ import bz2
 import codecs
 import json
 import io
+import unicodedata
 
 TIPOS_DE_VOTOS = {
         'NAO': 0,
@@ -43,6 +44,39 @@ TIPOS_DE_VOTOS = {
     }
 
 csv.register_dialect('basometro', delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
+
+
+def traduz_nome(txt):
+    #remove acentos
+    norm = unicodedata.normalize('NFKD', txt)
+    saida = norm.encode('ASCII','ignore')
+
+    #remove espaços extras
+    saida = saida.strip()
+
+    #muda nomes errados
+    traducao = {
+        "MANUELA D`AVILA":"MANUELA DAVILA",
+        "MANUELA D'AVILA":"MANUELA DAVILA",
+        "MANUELA D'ÁVILA":"MANUELA DAVILA",
+        "CHICO D'ANGELO":"CHICO DANGELO",
+        "BERNARDO SANTANA DE VASCONCELLO":"BERNARDO SANTANA DE VASCONCELLOS",
+        "PROFESSORA DORINHA SEABRA REZENDEDE":"PROFESSORA DORINHA SEABRA REZENDE",
+        "DRA. ELAINE ABISSAMRA":"DRA.ELAINE ABISSAMRA",
+        "ELVINO BOHN GASS":"BOHN GASS",
+        "CHICO D`ANGELO":"CHICO DANGELO",
+        "AGNOLIN":"ANGELO AGNOLIN",
+        "DR. FRANCISCO ARAUJO":"FRANCISCO ARAUJO",
+        "FELIX JUNIOR":"FELIX MENDONCA JUNIOR",
+        "ANTONIO CARLOS BIFFI":"BIFFI",
+        "JOAO PAULO  LIMA":"JOAO PAULO LIMA",
+        "JOSE DE FILIPPI JUNIOR":"JOSE DE FILIPPI",
+    }
+
+    if saida in traducao:
+        return traducao[saida]
+    else:
+        return saida
 
 def existe_arquivo_proposicoes():
     """ Checa se há arquivo de proposicoes no diretório local. se houver,
@@ -359,18 +393,41 @@ def acha_mandato(ano):
         return "dilma2"
 
 
+def pega_deputados_atuais():
+    """Pega a lista de deputados exercendo mandato atualmente"""
+    url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
+    connection = urlopen(url)
+    data = connection.read()
+    bs = BeautifulSoup(data)
+    deputados_atuais = [traduz_nome(deputado.findAll("nomeparlamentar")[0].string).decode('utf-8') for deputado in bs.findAll("deputado")]
+    with open(path + "deputados_atuais.csv", 'w') as f:
+        for dep in deputados_atuais:
+            f.write(dep)
+            f.write('\n')
+
+
 def gera_json_basometro():
     descompactar_arquivos()
     saida = {'politicos':{},'votacoes':{},'votos':[]}
 
     politicos_nao_encontrados = set()
     votos_com_problema = set()
+    politicos_atuais = []
+
+    #Carregando lista de políticos atuais
+    with open(path + "deputados_atuais.csv","r") as a:
+        for line in a.readlines():
+            politicos_atuais.append(line.rstrip('\n'))
 
     # Populando com a lista de políticos
     with open(path + 'deputados.csv', 'r') as p:
         reader = csv.DictReader(p, dialect='basometro')
         for row in reader:
             saida['politicos'][row['NOME_CASA']] = row
+            if row['NOME_CASA'] in politicos_atuais:
+                saida['politicos'][row['NOME_CASA']]['situacao'] = 'inativo'
+            else:
+                saida['politicos'][row['NOME_CASA']]['situacao'] = 'ativo'
             del saida['politicos'][row['NOME_CASA']]['NOME_CASA']
 
     #Populando com as votações
@@ -417,13 +474,14 @@ def descompactar_arquivos():
 
 
 def compactar_arquivos():
-    os.system("bzip2 -9 "+path+"*.csv *.json")
+    os.system("bzip2 -9 "+path+"*.csv "+path+"*.json")
 
 
 #variaveis globais e chamada necessária
-ano = 2014
+ano = 2007
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #obter_proposicoes(ano)
+pega_deputados_atuais()
 gera_json_basometro()
 
