@@ -78,6 +78,7 @@ def traduz_nome(txt):
     else:
         return saida
 
+
 def existe_arquivo_proposicoes():
     """ Checa se há arquivo de proposicoes no diretório local. se houver,
         ele já retorna esse arquivo"""
@@ -425,9 +426,9 @@ def gera_json_basometro():
         for row in reader:
             saida['politicos'][row['NOME_CASA']] = row
             if row['NOME_CASA'] in politicos_atuais:
-                saida['politicos'][row['NOME_CASA']]['situacao'] = 'inativo'
-            else:
                 saida['politicos'][row['NOME_CASA']]['situacao'] = 'ativo'
+            else:
+                saida['politicos'][row['NOME_CASA']]['situacao'] = 'inativo'
             del saida['politicos'][row['NOME_CASA']]['NOME_CASA']
 
     #Populando com as votações
