@@ -66,10 +66,10 @@ def acha_senador(senadores):
 
 
 def descompactar_arquivos():
-    os.system("bzip2 -d "+path+"*")
+    os.system("bunzip2 "+path+"*.bz2")
 
 def compactar_arquivos():
-    os.system("bzip2 -z "+path+"*.csv")
+    os.system("bzip2 -9 "+path+"*.csv "+path+"*.json")
 
 
 path = os.path.dirname(os.path.abspath(__file__))+"/"
