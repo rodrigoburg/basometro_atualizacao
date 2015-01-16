@@ -7,6 +7,7 @@ import csv
 import os
 import json
 import io
+import unicodedata
 
 TIPOS_DE_VOTOS = {
         'NAO': 0,
@@ -18,6 +19,26 @@ TIPOS_DE_VOTOS = {
     }
 
 csv.register_dialect('basometro', delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
+
+
+def traduz_nome(txt):
+    #remove acentos
+    norm = unicodedata.normalize('NFKD', txt)
+    saida = norm.encode('ASCII','ignore')
+
+    #remove espaços extras
+    saida = saida.strip()
+
+    #muda nomes errados
+    traducao = {
+        "Assis Gurgacz":"Acir Gurgacz",
+        "assis gurgacz":"acir gurgacz",
+    }
+
+    if saida in traducao:
+        return traducao[saida]
+    else:
+        return saida
 
 
 def busca_novas_proposicoes(datas,prop_antigas):
@@ -104,6 +125,7 @@ def traduz_voto(voto):
     else:
         return voto
 
+
 def consulta_ementa(codigo):
     #a ementa na API do Senado está em um site diferente. por isso essa função é necessária
     url = "http://legis.senado.gov.br/dadosabertos/materia/"+codigo
@@ -115,6 +137,7 @@ def consulta_ementa(codigo):
     ementa = materias[0].ementa.string
     return ementa.strip()
 
+
 def cria_lista_datas(data_inicio,data_fim):
     data_inicio = datetime.strptime(data_inicio, "%d%m%Y").date()
     data_fim = datetime.strptime(data_fim, "%d%m%Y").date()
@@ -123,6 +146,7 @@ def cria_lista_datas(data_inicio,data_fim):
     for i in range(delta.days + 1):
         datas.append((data_inicio + td(days=i)).strftime("%Y%m%d"))
     return datas
+
 
 def importa_proposicoes_antigas():
     prop_antigas = []
@@ -136,6 +160,7 @@ def importa_proposicoes_antigas():
         pass
 
     return prop_antigas
+
 
 def cria_arquivo_vazio():
     with open(path+"senado_votacoes.csv", "w", encoding='UTF8') as prop_saida,\
@@ -216,6 +241,7 @@ def escreve_resultado(v):
     #diz se a votacao entrou ou não
     return escreveu
 
+
 def atualiza_votacoes(data_inicio,data_fim):
     descompactar_arquivos()
 
@@ -238,13 +264,26 @@ def gera_json_basometro():
 
     politicos_nao_encontrados = set()
     votos_com_problema = set()
+    politicos_atuais = []
+
+    # Pegando senados em exercício
+    url = "http://www.senado.leg.br/senadores/"
+    connection = urlopen(url)
+    data = connection.read()
+    bs = BeautifulSoup(data)
+    politicos_atuais = [traduz_nome(item.string).decode('utf-8').lower() for item in bs.find_all("td","colNomeSenador")]
 
     # Populando com a lista de políticos
     with open(path + 'senadores.csv', 'r') as p:
         reader = csv.DictReader(p, dialect='basometro')
         for row in reader:
-            saida['politicos'][row['NOME_CASA']] = row
-            del saida['politicos'][row['NOME_CASA']]['NOME_CASA']
+            pol = traduz_nome(row['NOME_CASA']).decode('utf-8')
+            saida['politicos'][pol] = row
+            if pol.lower() in politicos_atuais:
+                saida['politicos'][pol]['situacao'] = 'ativo'
+            else:
+                saida['politicos'][pol]['situacao'] = 'inativo'
+            del saida['politicos'][pol]['NOME_CASA']
 
     #Populando com as votações
     with open(path + 'senado_votacoes.csv', 'r') as p:
@@ -257,13 +296,16 @@ def gera_json_basometro():
     with open(path + 'senado_votos.csv') as v:
         reader = csv.DictReader(v, dialect='basometro')
         for row in reader:
-            print(row)
-            if not saida['politicos'][row['POLITICO']]:
-                politicos_nao_encontrados.add(row['POLITICO'])
-            if row['VOTO'] not in TIPOS_DE_VOTOS:
-                votos_com_problema.add(row)
-            voto = [saida['politicos'][row['POLITICO']]['ID'],row['ID_VOTACAO'],row['PARTIDO'],TIPOS_DE_VOTOS[row['VOTO']]]
-            saida['votos'].append(voto)
+            pol = traduz_nome(row['POLITICO']).decode('utf-8')
+            if pol not in saida['politicos']:
+                print(row['POLITICO'])
+                politicos_nao_encontrados.add(pol)
+            else:
+                if row['VOTO'] not in TIPOS_DE_VOTOS:
+                    votos_com_problema.add(row)
+                else:
+                    voto = [saida['politicos'][pol]['ID'],row['ID_VOTACAO'],row['PARTIDO'],TIPOS_DE_VOTOS[row['VOTO']]]
+                    saida['votos'].append(voto)
 
     if len(politicos_nao_encontrados) > 0:
         print("#############################################")
@@ -289,8 +331,10 @@ def gera_json_basometro():
 def descompactar_arquivos():
     os.system("bunzip2 "+path+"*.bz2")
 
+
 def compactar_arquivos():
-    os.system("bzip2 -9 "+path+"*.csv *.json")
+    os.system("bzip2 -9 "+path+"*.csv "+path+"*.json")
+
 
 path = os.path.dirname(os.path.abspath(__file__))+"/"
 mandato = "dilma_1"
