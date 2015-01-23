@@ -7,6 +7,7 @@ from pandas import DataFrame, read_csv
 from unicodedata import normalize
 import os
 import csv
+import urllib.request
 
 def traduz_nome(txt):
     #remove acentos
@@ -145,7 +146,7 @@ def adiciona_deputados(lista_deputados,politicos,partido,mandato):
                 deputado["ID"] = i.idparlamentar.string
                 deputado["ANO_MANDATO"] = "2011"
                 deputado["LEGISLATURA"] = "54"
-                deputado["URL_FOTO"] = i.urlfoto.string
+                deputado["URL_FOTO"] = ""
 
         #se esse deputado não estiver no site, procura no arquivo local:
         if not deputado:
@@ -195,6 +196,7 @@ def checa_proposicoes(mandato):
 
 def descompactar_arquivos(mandato):
     os.system("bzip2 -d "+path+"/"+mandato+"/*")
+    
 
 def compactar_arquivos(mandato):
     os.system("bzip2 -z "+path+"/"+mandato+"/*")
@@ -218,13 +220,46 @@ def deputados_hoje():
     print(gabinetes)
     print(len(gabinetes))
     
+def baixa_fotos():
+    #cria diretório paras as fotos, se não houver
+    if not os.path.isdir(path+"/"+mandato+"/fotos"):
+        print("Criando diretório para as fotos")
+        os.system("mkdir "+path+"/"+mandato+"/fotos")
+    
+    
+    politicos = read_csv(path+"/"+mandato+"/deputados.csv",sep=";")
+    deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
+    deps_sem_foto = list(deps_sem_foto["NOME_CASA"])
+    
+    
+    #url = "file://"+path+"/Deputados.xml"
+    url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
+    dados = BeautifulSoup(urlopen(url).read())
+    deputados = dados.findAll("deputado")
+    for d in deputados:
+        dep_sem_acento = traduz_nome(d.nomeparlamentar.string)
+        if dep_sem_acento in deps_sem_foto:
+            codigo = str(list(politicos[politicos.NOME_CASA == dep_sem_acento]["ID"])[0])
+            urllib.request.urlretrieve(d.urlfoto.string, path+"/"+mandato+"/fotos/"+codigo+".jpg")
+            politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = codigo+".jpg"
+                
+            
+            print(d.urlfoto.string)
+            #politicos.loc[politicos.POLITICO == dep_sem_acento]["URL_FOTO"] = d.urlfoto.string
+    politicos["ANO_MANDATO"] = politicos["ANO_MANDATO"].apply(int)
+    politicos["LEGISLATURA"] = politicos["LEGISLATURA"].apply(int)
+    politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
+    politicos.to_csv(path+"/"+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    
+        
 #lista de mandatos: fhc2,lula1,lula2,dilma1,dilma2
 mandato = "dilma1"
 path = os.path.dirname(os.path.abspath(__file__))
 
-descompactar_arquivos(mandato)
-limpar_votos(mandato)
-checa_proposicoes(mandato)
-checa_deputado(mandato)
+
+#descompactar_arquivos(mandato)
+#limpar_votos(mandato)
+#checa_proposicoes(mandato)
+#checa_deputado(mandato)
+#baixa_fotos()
 compactar_arquivos(mandato)
-#deputados_hoje()
