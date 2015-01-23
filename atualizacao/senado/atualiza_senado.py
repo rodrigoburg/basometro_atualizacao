@@ -20,6 +20,15 @@ TIPOS_DE_VOTOS = {
 
 csv.register_dialect('basometro', delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
 
+def traduz_partido(part):
+    partidos = {
+            'SD': 'SDD',
+            'S/PARTIDO': 'S.Part.',
+            }
+    if part in partidos:
+        return partidos[part]
+    else:
+        return part
 
 def traduz_nome(txt):
     #remove acentos
@@ -73,7 +82,7 @@ def busca_novas_proposicoes(datas,prop_antigas):
                         voto["codigo"] = codigo
                         voto["data"] = d[2:]
                         voto["hora"] = v.horainicio.string + ":00"
-                        voto["orientacao_governo"] = traduz_voto(voto_lider_governo[0])
+                        voto["orientacao_governo"] = voto_lider_governo[0]
                         voto["tipo"] = v.siglamateria.string
                         voto["numero"] = v.numeromateria.string
                         voto["ano"] = v.anomateria.string
@@ -85,7 +94,7 @@ def busca_novas_proposicoes(datas,prop_antigas):
                         for l in lista_votos:
                             voto["politicos"].append(l.nomeparlamentar.string)
                             voto["votos"].append(traduz_voto(l.voto.string))
-                            voto["partidos"].append(l.siglapartido.string)
+                            voto["partidos"].append(traduz_partido(l.siglapartido.string))
 
                         prop_antigas.append(codigo)
 
@@ -213,7 +222,7 @@ def escreve_resultado(v):
             quotechar='"',
             quoting=csv.QUOTE_NONNUMERIC)
 
-        if v["orientacao_governo"] in ["SIM","NAO"]:
+        if v["orientacao_governo"] in ["Sim","Não"]:
             escreveu = True
 
             #escreve no arquivo de proposiçÕes
@@ -337,7 +346,7 @@ def compactar_arquivos():
 
 
 path = os.path.dirname(os.path.abspath(__file__))+"/"
-mandato = "dilma_1"
+mandato = "dilma1"
 lider_governo = "Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
 #atualiza_votacoes("01012011","31122014")
 #compactar_arquivos()
