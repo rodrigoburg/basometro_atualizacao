@@ -78,12 +78,12 @@ def baixa_fotos():
         print("Criando diretório para as fotos")
         os.system("mkdir "+path+"/"+mandato)
         os.system("mkdir "+path+"/"+mandato+"/fotos")
-    
+
     politicos = read_csv(path+"senadores.csv",sep=";")
     sen_sem_foto = politicos[politicos.URL_FOTO.isnull()]
     sen_sem_foto = list(sen_sem_foto["NOME_CASA"])
-    
-    
+
+
     #url = "file://"+path+"/Deputados.xml"
     url = "http://legis.senado.leg.br/dadosabertos/senador/lista/legislatura/54"
     bs = BeautifulSoup(urlopen(url).read())
@@ -94,11 +94,11 @@ def baixa_fotos():
             codigo = str(list(politicos[politicos.NOME_CASA == nome]["ID"])[0])
             try:
                 urllib.request.urlretrieve(s.urlfotoparlamentar.string, path+"/"+mandato+"/fotos/"+codigo+".jpg")
-                politicos.loc[politicos.NOME_CASA == nome,"URL_FOTO"] = codigo+".jpg"
+                politicos.loc[politicos.NOME_CASA == nome,"URL_FOTO"] = "sen_" + codigo+".jpg"
             except urllib.error.HTTPError:
                 politicos.loc[politicos.NOME_CASA == nome,"URL_FOTO"] = "sem_foto.jpg"
-                
-            
+
+
             print(s.urlfotoparlamentar.string)
             #politicos.loc[politicos.POLITICO == dep_sem_acento]["URL_FOTO"] = d.urlfoto.string
 #    politicos["ANO_MANDATO"] = politicos["ANO_MANDATO"].apply(int)
