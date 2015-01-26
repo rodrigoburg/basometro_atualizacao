@@ -479,7 +479,7 @@ def compactar_arquivos():
 
 
 #variaveis globais e chamada necessária
-ano = 2007
+ano = 2004
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #obter_proposicoes(ano)

@@ -127,7 +127,7 @@ def adiciona_deputados(lista_deputados,politicos,partido,mandato):
     #o link para o download deste arquivo é este:
     #http://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo/webservices/deputados
     path = os.path.dirname(os.path.abspath(__file__))
-    
+
     url2 = "file://"+path+"/Deputados.xml"
     dados2 = BeautifulSoup(urlopen(url2).read())
     deputados2 = dados2.findAll("deputado")
@@ -161,9 +161,9 @@ def adiciona_deputados(lista_deputados,politicos,partido,mandato):
                     deputado["LEGISLATURA"] = i.numlegislatura.string
                     deputado["ANO_MANDATO"] = "2011" if deputado["LEGISLATURA"] == "54" else "2007"
                     deputado["URL_FOTO"] = ""
-        
+
         #se não tiver nem no arquivo local, só adicione um deputado incognita no arquivo de deputados
-        
+
         if not deputado:
             print("Erro no deputado: "+d)
             deputado["POLITICO"] =  d
@@ -174,11 +174,11 @@ def adiciona_deputados(lista_deputados,politicos,partido,mandato):
             deputado["LEGISLATURA"] = "NA"
             deputado["ANO_MANDATO"] = "NA"
             deputado["URL_FOTO"] = ""
-            
+
         if deputado:
             politicos = politicos.append(deputado,ignore_index=True)
             print("Político adicionado: "+deputado["NOME_CASA"])
-        
+
     politicos.to_csv(path+"/"+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def checa_proposicoes(mandato):
@@ -195,11 +195,11 @@ def checa_proposicoes(mandato):
 
 
 def descompactar_arquivos(mandato):
-    os.system("bzip2 -d "+path+"/"+mandato+"/*")
-    
+    os.system("bunzip2 "+path+"/"+mandato+"/*.bz2")
+
 
 def compactar_arquivos(mandato):
-    os.system("bzip2 -z "+path+"/"+mandato+"/*")
+    os.system("bzip2 -9 "+path+"/"+mandato+"/*.csv " + path+"/"+mandato+"/*.json")
 
 def deputados_hoje():
 #    url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
@@ -219,19 +219,19 @@ def deputados_hoje():
                 print("Gabinete repetido! "+gab)
     print(gabinetes)
     print(len(gabinetes))
-    
+
 def baixa_fotos():
     #cria diretório paras as fotos, se não houver
     if not os.path.isdir(path+"/"+mandato+"/fotos"):
         print("Criando diretório para as fotos")
         os.system("mkdir "+path+"/"+mandato+"/fotos")
-    
-    
+
+
     politicos = read_csv(path+"/"+mandato+"/deputados.csv",sep=";")
     deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
     deps_sem_foto = list(deps_sem_foto["NOME_CASA"])
-    
-    
+
+
     #url = "file://"+path+"/Deputados.xml"
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
@@ -240,26 +240,26 @@ def baixa_fotos():
         dep_sem_acento = traduz_nome(d.nomeparlamentar.string)
         if dep_sem_acento in deps_sem_foto:
             codigo = str(list(politicos[politicos.NOME_CASA == dep_sem_acento]["ID"])[0])
-            urllib.request.urlretrieve(d.urlfoto.string, path+"/"+mandato+"/fotos/"+codigo+".jpg")
-            politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = codigo+".jpg"
-                
-            
+            urllib.request.urlretrieve(d.urlfoto.string, path+"/"+mandato+"/fotos/dep_"+codigo+".jpg")
+            politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = "dep_"+codigo+".jpg"
+
+
             print(d.urlfoto.string)
             #politicos.loc[politicos.POLITICO == dep_sem_acento]["URL_FOTO"] = d.urlfoto.string
     politicos["ANO_MANDATO"] = politicos["ANO_MANDATO"].apply(int)
     politicos["LEGISLATURA"] = politicos["LEGISLATURA"].apply(int)
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos.to_csv(path+"/"+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-    
-        
+
+
 #lista de mandatos: fhc2,lula1,lula2,dilma1,dilma2
 mandato = "dilma1"
 path = os.path.dirname(os.path.abspath(__file__))
 
 
-#descompactar_arquivos(mandato)
+descompactar_arquivos(mandato)
 #limpar_votos(mandato)
 #checa_proposicoes(mandato)
 #checa_deputado(mandato)
-#baixa_fotos()
+baixa_fotos()
 compactar_arquivos(mandato)
