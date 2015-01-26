@@ -3,7 +3,7 @@
 
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from pandas import DataFrame, read_csv
+from pandas import DataFrame, read_csv, Series
 from unicodedata import normalize
 import os
 import csv
@@ -221,17 +221,33 @@ def deputados_hoje():
     print(len(gabinetes))
 
 def baixa_fotos():
+    #ATENCAO: código pode ser usado tanto para baixar as fotos antigas de um governo que já estejam no arquivo de deputados quanto para baixar
+    #fotos de deputados novos acrescentados na checagem de deputados rotineira. Comente a parte do código que você não for usar
+    
     #cria diretório paras as fotos, se não houver
     if not os.path.isdir(path+"/"+mandato+"/fotos"):
         print("Criando diretório para as fotos")
         os.system("mkdir "+path+"/"+mandato+"/fotos")
 
-
-    politicos = read_csv(path+"/"+mandato+"/deputados.csv",sep=";")
-    deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
+    politicos = read_csv(path+"/"+mandato+"/deputados.csv",sep=";",dtype={'ID': 'str',"ANO_MANDATO":'str',"LEGISLATURA":'str'})
+    
+    #pega fotos antigas
+    politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
+    politicos["ID"] = politicos["ID"].apply(str)
+    links = Series(politicos.URL_FOTO.values,index=politicos.ID).to_dict()
+    for codigo in links:
+        if links[codigo] != "sem_foto.jpg":
+            try:
+                urllib.request.urlretrieve(links[codigo], path+"/"+mandato+"/fotos/dep_"+codigo+".jpg")
+                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "dep_"+codigo+".jpg"
+                print(links[codigo])
+            except (urllib.error.HTTPError):
+                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"
+        
+    
+    #pega fotos novas
+    '''deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
     deps_sem_foto = list(deps_sem_foto["NOME_CASA"])
-
-
     #url = "file://"+path+"/Deputados.xml"
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
@@ -242,18 +258,16 @@ def baixa_fotos():
             codigo = str(list(politicos[politicos.NOME_CASA == dep_sem_acento]["ID"])[0])
             urllib.request.urlretrieve(d.urlfoto.string, path+"/"+mandato+"/fotos/dep_"+codigo+".jpg")
             politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = "dep_"+codigo+".jpg"
-
-
             print(d.urlfoto.string)
-            #politicos.loc[politicos.POLITICO == dep_sem_acento]["URL_FOTO"] = d.urlfoto.string
-    politicos["ANO_MANDATO"] = politicos["ANO_MANDATO"].apply(int)
-    politicos["LEGISLATURA"] = politicos["LEGISLATURA"].apply(int)
+            #politicos.loc[politicos.POLITICO == dep_sem_acento]["URL_FOTO"] = d.urlfoto.string'''
+    
+
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos.to_csv(path+"/"+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 
 #lista de mandatos: fhc2,lula1,lula2,dilma1,dilma2
-mandato = "dilma1"
+mandato = "lula2"
 path = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -261,5 +275,5 @@ descompactar_arquivos(mandato)
 #limpar_votos(mandato)
 #checa_proposicoes(mandato)
 #checa_deputado(mandato)
-baixa_fotos()
+#baixa_fotos()
 compactar_arquivos(mandato)
