@@ -1,6 +1,3 @@
-#-*- coding: utf-8 -*-
-#!/usr/bin/python3
-
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from pandas import DataFrame, read_csv, Series
@@ -232,7 +229,7 @@ def baixa_fotos():
     politicos = read_csv(path+"/"+mandato+"/deputados.csv",sep=";",dtype={'ID': 'str',"ANO_MANDATO":'str',"LEGISLATURA":'str'})
     
     #pega fotos antigas
-    politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
+    '''politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos["ID"] = politicos["ID"].apply(str)
     links = Series(politicos.URL_FOTO.values,index=politicos.ID).to_dict()
     for codigo in links:
@@ -242,11 +239,11 @@ def baixa_fotos():
                 politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "dep_"+codigo+".jpg"
                 print(links[codigo])
             except (urllib.error.HTTPError):
-                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"
+                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"'''
         
     
     #pega fotos novas
-    '''deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
+    deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
     deps_sem_foto = list(deps_sem_foto["NOME_CASA"])
     #url = "file://"+path+"/Deputados.xml"
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
@@ -256,24 +253,26 @@ def baixa_fotos():
         dep_sem_acento = traduz_nome(d.nomeparlamentar.string)
         if dep_sem_acento in deps_sem_foto:
             codigo = str(list(politicos[politicos.NOME_CASA == dep_sem_acento]["ID"])[0])
-            urllib.request.urlretrieve(d.urlfoto.string, path+"/"+mandato+"/fotos/dep_"+codigo+".jpg")
-            politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = "dep_"+codigo+".jpg"
-            print(d.urlfoto.string)
-            #politicos.loc[politicos.POLITICO == dep_sem_acento]["URL_FOTO"] = d.urlfoto.string'''
-    
+            try:
+                urllib.request.urlretrieve(d.urlfoto.string, path+"/"+mandato+"/fotos/dep_"+codigo+".jpg")
+                politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = "dep_"+codigo+".jpg"
+                print(d.urlfoto.string)
+            except: #se não achar foto
+                continue
 
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos.to_csv(path+"/"+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 
 #lista de mandatos: fhc2,lula1,lula2,dilma1,dilma2
-mandato = "lula2"
+mandato = "dilma2"
 path = os.path.dirname(os.path.abspath(__file__))
 
 
 descompactar_arquivos(mandato)
-#limpar_votos(mandato)
-#checa_proposicoes(mandato)
-#checa_deputado(mandato)
-#baixa_fotos()
+limpar_votos(mandato)
+checa_proposicoes(mandato)
+checa_deputado(mandato)
+baixa_fotos()
 compactar_arquivos(mandato)
+

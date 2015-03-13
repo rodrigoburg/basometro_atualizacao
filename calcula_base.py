@@ -155,8 +155,7 @@ def acha_meses(datas):
     meses.sort()
     return meses
 
-#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma1
-def governismo_partido(mandato):
+def calcula_historico(mandato):
     #pega diretório do script para abrir os arquivos de votos e proposições
     path = os.path.dirname(os.path.abspath(__file__))
 
@@ -368,8 +367,8 @@ def matriz_semelhanca(mandato):
     saida = DataFrame.from_dict(semelhanca)
     saida.to_csv(path+"/matriz_semelhanca.csv")
 
-#chame a função governismo_partido com 4 opções: fhc2, lula1, lula2 e dilma1
-governismo_partido("dilma1")
+#função que faz o histórico. são 5 opções: fhc2, lula1, lula2, dilma1 e dilma2
+calcula_historico("dilma2")
 
 #matriz_semelhanca("dilma")
 

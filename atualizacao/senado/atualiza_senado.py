@@ -61,6 +61,7 @@ def busca_novas_proposicoes(datas,prop_antigas):
         num_votacoes = len(lista_votacoes)
         if num_votacoes > 0:
             print("Há "+str(num_votacoes)+ "votacoes")
+            print(url)
         #para cada votação
         for v in lista_votacoes:
             try:
@@ -346,8 +347,8 @@ def compactar_arquivos():
 
 
 path = os.path.dirname(os.path.abspath(__file__))+"/"
-mandato = "dilma1"
+mandato = "dilma2"
 lider_governo = "Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
-#atualiza_votacoes("01012011","31122014")
+atualiza_votacoes("01012015","08032015")
 #compactar_arquivos()
-gera_json_basometro()
+#gera_json_basometro()

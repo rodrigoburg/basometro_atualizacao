@@ -479,10 +479,12 @@ def compactar_arquivos():
 
 
 #variaveis globais e chamada necessária
-ano = 2004
+ano = 2015
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
-#obter_proposicoes(ano)
-pega_deputados_atuais()
-gera_json_basometro()
 
+#obter_proposicoes(ano)
+#pega_deputados_atuais()
+#gera_json_basometro()
+
+#compactar_arquivos()
