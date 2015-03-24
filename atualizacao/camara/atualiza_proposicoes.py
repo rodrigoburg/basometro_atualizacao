@@ -262,6 +262,27 @@ def media_algarismos(numero):
         soma += int(i)
     return str(int(soma/len(numero)))
 
+def rice(vetor):
+	if ( len(vetor) <= 1 ):
+		return(0)
+	n_one = 0
+	n_zero = 0
+	for i in vetor: # Calcula o numero de 1 e 0 
+		if i == 0:
+			n_zero += 1
+		elif i == 1:
+			n_one += 1
+		else:
+			continue
+	if ( n_one == 0 and n_zero == 0 ):
+		return(0)
+	rice = (n_one - n_zero)/(n_one + n_zero)
+	return(abs(rice))
+
+
+
+
+
 
 def codigo_votacao(votacao,codigo_proposicao):
     """Gera um código único para cada votação"""
@@ -508,6 +529,12 @@ def pega_arquivos():
 def media(lista):
     return sum(lista) / float(len(lista))
 
+def media_guilherme(lista):
+    for i in list:
+        if ( i == None ):
+            return -10    
+    return sum(lista) / float(len(lista))
+
 def calcula_governismo(props,df_votos):
     #transforma DataFrame em lista de dicionários
     df_props = props.T.to_dict().values()
@@ -531,7 +558,7 @@ def calcula_governismo(props,df_votos):
         try:
             #faz a média da coluna resultado e passa isso para uma lista
             resultado.append(np.average(list(subvotos["RESULTADO"])))
-            aux_variancia.append(np.var(list(subvotos["RESULTADO"])))
+            aux_variancia.append(rice(list(subvotos["RESULTADO"])))
             aux_deputados.append(len(subvotos))
             num_votos += len(subvotos)
         except KeyError:
@@ -540,6 +567,7 @@ def calcula_governismo(props,df_votos):
     try:
         #faz a média do resultado, achando assim o governismo
         governismo = media(resultado)
+        print(aux_variancia)
         variancia = media(aux_variancia)
         num_deputados = media(aux_deputados)
         return governismo, num_votos, variancia, num_deputados
