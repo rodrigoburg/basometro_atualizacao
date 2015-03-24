@@ -714,39 +714,42 @@ def calcula_historico():
     #Cálculo da média móvel
     #Para cada partido faça....
     for partido in aux_saida:
-        saida[partido] = []
-        #Para cada mês da lista de meses faça...
-        for mes in meses:
-            indice = meses.index(mes) #Pega o índice do mês na lista
-            item = {}
-            #Se for o primeiro item da lista, só copia os valores
-            #Salva a data no dicionário final
-            item["date"] = aux_saida[partido][mes]["date"]
-            #arruma as datas da década de 1990
-            if item["date"][2] == "9":
-                item["date"] = "19" + item["date"][2:]
-            #Inicializa um contador de "meses iterados"
-            contador = 0
-            soma_movel = 0
-            variancia_movel = 0
-            num_deputados_movel = 0
-            total_local_votacoes = 0
-            while contador < 6 and (indice - contador >= 0): #2 porque quero pegar os últimos 6 meses
-                soma_movel += aux_saida[partido][meses[indice - contador]]["valor"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
-                variancia_movel += aux_saida[partido][meses[indice - contador]]["variancia"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
-                num_deputados_movel += aux_saida[partido][meses[indice - contador]]["num_deputados"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
-                total_local_votacoes += aux_saida[partido][meses[indice - contador]]["num_votacoes"]
-                contador+=1
-            #Se o total_local_de_votacoes for maior que zero, ou seja, se tem votação considerada...
-            if total_local_votacoes > 0:
-                item["valor"] = int(round((soma_movel / total_local_votacoes),0))
-                item["variancia"] = int(round((variancia_movel / total_local_votacoes),0))
-                item["num_deputados"] = int(round((num_deputados_movel / total_local_votacoes),0))
-            else:
-                item["valor"] = -1
-            #print(partido,total_local_votacoes,soma_movel,aux_saida[partido][mes]["valor"], item["valor"])
+        if partido != "S.Part.":
+            saida[partido] = []
+            #Para cada mês da lista de meses faça...
+            for mes in meses:
+                indice = meses.index(mes) #Pega o índice do mês na lista
+                item = {}
+                #Se for o primeiro item da lista, só copia os valores
+                #Salva a data no dicionário final
+                item["date"] = aux_saida[partido][mes]["date"]
+                #arruma as datas da década de 1990
+                if item["date"][2] == "9":
+                    item["date"] = "19" + item["date"][2:]
+                #Inicializa um contador de "meses iterados"
+                contador = 0
+                soma_movel = 0
+                variancia_movel = 0
+                num_deputados_movel = 0
+                total_local_votacoes = 0
+                while contador < 6 and (indice - contador >= 0): #2 porque quero pegar os últimos 6 meses
+                    #se existir governismo e variancia para esse partido nesse período...
+                    if aux_saida[partido][meses[indice - contador]]["valor"] > 0:
+                        soma_movel += aux_saida[partido][meses[indice - contador]]["valor"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        variancia_movel += aux_saida[partido][meses[indice - contador]]["variancia"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        num_deputados_movel += aux_saida[partido][meses[indice - contador]]["num_deputados"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        total_local_votacoes += aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                    contador+=1
+                #Se o total_local_de_votacoes for maior que zero, ou seja, se tem votação considerada...
+                if total_local_votacoes > 0:
+                    item["valor"] = int(round((soma_movel / total_local_votacoes),0))
+                    item["variancia"] = int(round((variancia_movel / total_local_votacoes),0))
+                    item["num_deputados"] = int(round((num_deputados_movel / total_local_votacoes),0))
+                else:
+                    item["valor"] = -1
+                #print(partido,total_local_votacoes,soma_movel,aux_saida[partido][mes]["valor"], item["valor"])
 
-            saida[partido].append(item)
+                saida[partido].append(item)
 
     #escreve Json de saída
     with open (mandato+"/hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as jsonfile:
@@ -763,10 +766,11 @@ def calcula_historico():
             governismo = []
             num_deputados = []
             for i in saida[sigla]:
-                data = i["date"]
-                variancia.append([data, i["variancia"]])
-                governismo.append([data, i["valor"]])
-                num_deputados.append([data,i["num_deputados"]])
+                if "variancia" in i:
+                    data = i["date"]
+                    variancia.append([data, i["variancia"]])
+                    governismo.append([data, i["valor"]])
+                    num_deputados.append([data,i["num_deputados"]])
             item["variancia"] = variancia
             item["governismo"] = governismo
             item["num_deputados"] = num_deputados
@@ -1111,13 +1115,13 @@ def baixa_fotos():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
-ano = 2015
+ano = 2014
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
 #ATUALIZA O BASOMETRO
 #
-#descompactar_arquivos()
+descompactar_arquivos()
 #obter_proposicoes(ano)
 
 #CHECA OS DEPUTADOS
@@ -1131,7 +1135,7 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #
 #pega_deputados_atuais()
 #gera_json_basometro()
-#calcula_historico()
+calcula_historico()
 
 compactar_arquivos()
 
