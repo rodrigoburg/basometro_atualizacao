@@ -46,6 +46,19 @@ TIPOS_DE_VOTOS = {
 
 csv.register_dialect('basometro', delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
 
+def media_melhor(vetor):
+    soma = 0.0
+    tamanho = 0.0
+    if (len(vetor) < 1):
+        return None
+    for i in vetor:
+        if ( i != None ):
+            soma += i
+            tamanho += 1
+    if ( soma == 0 and tamanho == 0):
+        return None
+    return(soma/tamanho)
+
 
 def traduz_nome(txt):
     #remove acentos
@@ -529,11 +542,7 @@ def pega_arquivos():
 def media(lista):
     return sum(lista) / float(len(lista))
 
-def media_guilherme(lista):
-    for i in list:
-        if ( i == None ):
-            return -10    
-    return sum(lista) / float(len(lista))
+
 
 def calcula_governismo(props,df_votos):
     #transforma DataFrame em lista de dicionários
@@ -568,7 +577,7 @@ def calcula_governismo(props,df_votos):
         #faz a média do resultado, achando assim o governismo
         governismo = media(resultado)
         print(aux_variancia)
-        variancia = media(aux_variancia)
+        variancia = media_melhor(aux_variancia)
         num_deputados = media(aux_deputados)
         return governismo, num_votos, variancia, num_deputados
 
