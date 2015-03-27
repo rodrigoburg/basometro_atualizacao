@@ -21,7 +21,6 @@
 # votos.csv para toda votação que for acrescentada seguindo os
 # critérios descritos acima.
 
-from unicodedata import normalize
 import urllib.request
 import hashlib
 from urllib.request import urlopen
@@ -63,34 +62,11 @@ def media_melhor(vetor):
 def traduz_nome(txt):
     #remove acentos
     norm = unicodedata.normalize('NFKD', txt)
-    saida = norm.encode('ASCII','ignore')
 
     #remove espaços extras
-    saida = saida.strip()
+    saida = norm.strip()
 
-    #muda nomes errados
-    traducao = {
-        "MANUELA D`AVILA":"MANUELA DAVILA",
-        "MANUELA D'AVILA":"MANUELA DAVILA",
-        "MANUELA D'ÁVILA":"MANUELA DAVILA",
-        "CHICO D'ANGELO":"CHICO DANGELO",
-        "BERNARDO SANTANA DE VASCONCELLO":"BERNARDO SANTANA DE VASCONCELLOS",
-        "PROFESSORA DORINHA SEABRA REZENDEDE":"PROFESSORA DORINHA SEABRA REZENDE",
-        "DRA. ELAINE ABISSAMRA":"DRA.ELAINE ABISSAMRA",
-        "ELVINO BOHN GASS":"BOHN GASS",
-        "CHICO D`ANGELO":"CHICO DANGELO",
-        "AGNOLIN":"ANGELO AGNOLIN",
-        "DR. FRANCISCO ARAUJO":"FRANCISCO ARAUJO",
-        "FELIX JUNIOR":"FELIX MENDONCA JUNIOR",
-        "ANTONIO CARLOS BIFFI":"BIFFI",
-        "JOAO PAULO  LIMA":"JOAO PAULO LIMA",
-        "JOSE DE FILIPPI JUNIOR":"JOSE DE FILIPPI",
-    }
-
-    if saida in traducao:
-        return traducao[saida]
-    else:
-        return saida
+    return saida
 
 
 def existe_arquivo_proposicoes():
@@ -576,7 +552,6 @@ def calcula_governismo(props,df_votos):
     try:
         #faz a média do resultado, achando assim o governismo
         governismo = media(resultado)
-        print(aux_variancia)
         variancia = media_melhor(aux_variancia)
         num_deputados = media(aux_deputados)
         return governismo, num_votos, variancia, num_deputados
@@ -740,9 +715,9 @@ def calcula_historico():
                 governismo = calcula_governismo(props_temp,temp)
                 #se houver governismo para esse partido, ou seja, algum voto
                 if (governismo):
-                    item["valor"] = int(round(governismo[0]*100,0))
+                    item["valor"] = int(round(governismo[0]*100))
                     item["num_votacoes"] = governismo[1]
-                    item["variancia"] = int(round(governismo[2]*100,0))
+                    item["variancia"] = int(round(governismo[2]*100))
                     item["num_deputados"] = int(round(governismo[3]))
             aux_saida[partido][mes] = item
 
@@ -995,9 +970,9 @@ def checa_deputado():
 
     lista_politicos = list(set(lista_politicos))
 
-    print(len(lista_politicos))
+    print("ERRO EM: "+str(len(lista_politicos))+" POLÍTICOS")
 
-    print(partido)
+    print(partido.keys())
     if (lista_politicos):
         adiciona_deputados(lista_politicos,politicos,partido)
 
@@ -1152,7 +1127,7 @@ def baixa_fotos():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
-ano = 2014
+ano = 2015
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
@@ -1172,7 +1147,7 @@ descompactar_arquivos()
 #
 #pega_deputados_atuais()
 #gera_json_basometro()
-calcula_historico()
+#calcula_historico()
 
 compactar_arquivos()
 
