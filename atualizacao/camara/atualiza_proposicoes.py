@@ -788,7 +788,7 @@ def calcula_historico():
             item["num_deputados"] = num_deputados
             aux_variancia.append(item)
 
-    with open (mandato+"/variancia_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as jsonfile:
+    with open (mandato+"/variancia_"+mandato+"_camara.json","w",encoding='UTF8') as jsonfile:
         jsonfile.write(json.dumps(aux_variancia))
     print("JSON da variância do mandato " + mandato + " salvo")
 
@@ -1123,6 +1123,34 @@ def baixa_fotos():
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos.to_csv(path+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
+def junta_variancia():
+    mandatos = ["lula1","lula2","dilma1","dilma2"]
+    variaveis = ["governismo","variancia","num_deputados"]
+    partidos = {}
+    for m in mandatos:
+        with open(m+'/variancia_'+m+'_camara.json') as json_data:
+            temp = json.load(json_data)
+            for partido in temp:
+                sigla = partido["name"]
+                if sigla not in partidos:
+                    partidos[sigla] = {}
+                    for var in variaveis:
+                        partidos[sigla][var] = []
+
+                for var in variaveis:
+                    partidos[sigla][var] += (partido[var])
+
+    saida = []
+    for p in partidos:
+        item = {}
+        item["name"] = p
+        for var in variaveis:
+            item[var] = partidos[p][var]
+        saida.append(item)
+
+    with open ("variancia_camara.json","w",encoding='UTF8') as jsonfile:
+        jsonfile.write(json.dumps(saida))
+    print("JSON da variância total salvo")
 
 path = os.path.dirname(os.path.abspath(__file__))
 
@@ -1142,12 +1170,14 @@ descompactar_arquivos()
 #checa_proposicoes()
 #checa_deputado()
 #baixa_fotos()
+#print("AGORA NÃO SE ESQUEÇA DE COLOCAR A EXPLICAÇÃO PARA AS VOTAÇÕES")
 
 #GERA SAÍDA E COMPACTA
 #
 #pega_deputados_atuais()
 #gera_json_basometro()
 #calcula_historico()
+#junta_variancia()
 
 compactar_arquivos()
 
