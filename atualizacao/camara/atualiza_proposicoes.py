@@ -543,7 +543,7 @@ def calcula_governismo(props,df_votos):
         try:
             #faz a média da coluna resultado e passa isso para uma lista
             resultado.append(np.average(list(subvotos["RESULTADO"])))
-            aux_variancia.append(rice(list(subvotos["RESULTADO"])))
+            aux_variancia.append(np.var(list(subvotos["RESULTADO"])))
             aux_deputados.append(len(subvotos))
             num_votos += len(subvotos)
         except KeyError:
@@ -604,30 +604,6 @@ def calcula_deputados(props,votos):
     #print("% que votou entre 50% e 90% com o governo: "+str(entre_50_e_90*100/len(lista_deputados)))
     #print("% que votou menos de 50% com o governo: "+str(menos_de_50*100/len(lista_deputados)))
 
-def faz_analise():
-    props,votos = pega_arquivos()
-    calcula_governismo(props,votos)
-    calcula_deputados(props,votos)
-
-    lista_codigos = []
-    for v in votos:
-        lista_codigos.append(v["codigo"])
-
-    lista_codigos_votos = list(set(lista_codigos))
-
-    lista_codigos = []
-    for p in props:
-        lista_codigos.append(p["codigo"])
-
-    lista_codigos_props = list(set(lista_codigos))
-
-    #for p in lista_codigos:
-        #if p not in lista_codigos_votos:
-            #print(p)
-    #print("******")
-    #for p in lista_codigos_votos:
-        #if p not in lista_codigos:
-            #print(p)
 
 def conserta_voto(voto):
     voto = voto.upper()
@@ -1146,6 +1122,7 @@ def junta_variancia():
         item["name"] = p
         for var in variaveis:
             item[var] = partidos[p][var]
+
         saida.append(item)
 
     with open ("variancia_camara.json","w",encoding='UTF8') as jsonfile:
@@ -1155,7 +1132,7 @@ def junta_variancia():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
-ano = 2015
+ano = 2004
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
