@@ -1,13 +1,18 @@
 #-*- coding: utf-8 -*-
 #!/usr/bin/python3
 from datetime import date, datetime, timedelta as td
-from urllib.request import urlopen
-from bs4 import BeautifulSoup
 import csv
 import os
 import json
 import io
 import unicodedata
+from pandas import DataFrame, read_csv
+from unicodedata import normalize
+from urllib.request import urlopen
+import urllib
+from bs4 import BeautifulSoup
+import os
+import csv
 
 TIPOS_DE_VOTOS = {
         'NAO': 0,
@@ -144,7 +149,11 @@ def consulta_ementa(codigo):
     data = connection.read()
     bs = BeautifulSoup(data)
     materias = bs.findAll("materia")
-    ementa = materias[0].ementa.string
+    try:
+        ementa = materias[0].ementa.string
+    except AttributeError:
+        ementa = materias[0].ementamateria.string
+
     return ementa.strip()
 
 
@@ -179,13 +188,13 @@ def cria_arquivo_vazio():
             prop_saida,
             delimiter=';',
             quotechar='"',
-            quoting=csv.QUOTE_NONNUMERIC)
+            quoting=csv.QUOTE_ALL)
 
         escreve_voto = csv.writer(
             voto_saida,
             delimiter=';',
             quotechar='"',
-            quoting=csv.QUOTE_NONNUMERIC)
+            quoting=csv.QUOTE_ALL)
 
         escreve_prop.writerow([
             "ID_VOTACAO",
@@ -253,7 +262,6 @@ def escreve_resultado(v):
 
 
 def atualiza_votacoes(data_inicio,data_fim):
-    descompactar_arquivos()
 
     #cria lista com dias para se fazer a busca
     datas = cria_lista_datas(data_inicio, data_fim)
@@ -264,17 +272,14 @@ def atualiza_votacoes(data_inicio,data_fim):
         cria_arquivo_vazio()
 
     #busca as votações e escreve
-    votacoes = busca_novas_proposicoes(datas,prop_antigas)
-    compactar_arquivos()
+    busca_novas_proposicoes(datas,prop_antigas)
 
 
 def gera_json_basometro():
-    descompactar_arquivos()
     saida = {'politicos':{},'votacoes':{},'votos':[]}
 
     politicos_nao_encontrados = set()
     votos_com_problema = set()
-    politicos_atuais = []
 
     # Pegando senados em exercício
     url = "http://www.senado.leg.br/senadores/"
@@ -284,7 +289,7 @@ def gera_json_basometro():
     politicos_atuais = [traduz_nome(item.string).decode('utf-8').lower() for item in bs.find_all("td","colNomeSenador")]
 
     # Populando com a lista de políticos
-    with open(path + 'senadores.csv', 'r') as p:
+    with open(path + 'senadores.csv') as p:
         reader = csv.DictReader(p, dialect='basometro')
         for row in reader:
             pol = traduz_nome(row['NOME_CASA']).decode('utf-8')
@@ -335,7 +340,108 @@ def gera_json_basometro():
 
     print("Geração de JSON termianda")
 
-    compactar_arquivos()
+
+def remover_acentos(txt):
+    txt = txt.strip()
+    txt = normalize('NFKD', txt).encode('ASCII','ignore').decode('ASCII')
+    traducao = {
+        "Assis Gurgacz":"Acir Gurgacz"
+    }
+    if txt in traducao:
+        return traducao[txt]
+    else:
+        return txt
+
+def limpar_votos():
+    votos = read_csv(path+"senado_votos.csv",sep=";")
+    votos["POLITICO"] = votos["POLITICO"].apply(remover_acentos)
+    votos.to_csv(path+"senado_votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+
+def testa_voto():
+    votos = read_csv(path+"senado_votos.csv",sep=";")
+    try:
+        politicos = read_csv(path+"/senadores.csv",sep=";")
+    except OSError: #se não houver arquivo de senadores, cria um DF vazio
+        colunas = ['POLITICO', 'NOME_CASA','PARTIDO',"UF",'ID',"ANO_MANDATO","LEGISLATURA","URL_FOTO"]
+        politicos = DataFrame(columns=colunas)
+
+    lista_politicos = []
+
+    for p in votos["POLITICO"]:
+        if p not in list(politicos["NOME_CASA"]):
+            lista_politicos.append(p)
+
+    lista_politicos = list(set(lista_politicos))
+    print("Estão faltando "+str(len(lista_politicos)) + " senadores no arquivo de políticos.")
+    print(lista_politicos)
+
+    if len(lista_politicos) > 0:
+        acha_senador(lista_politicos,politicos)
+
+
+def acha_senador(senadores,politicos):
+    for l in legislaturas:
+        url = "http://legis.senado.leg.br/dadosabertos/senador/lista/legislatura/"+l
+        bs = BeautifulSoup(urlopen(url).read())
+        lista_senadores = bs.findAll("parlamentar")
+        for sen in lista_senadores:
+            nome = remover_acentos(sen.nomeparlamentar.string)
+            if nome in senadores:
+                senador = {}
+                senador['POLITICO'] = nome
+                senador['NOME_CASA'] = nome
+                senador['PARTIDO'] = sen.siglapartido.string
+                senador['UF'] = sen.siglauf.string
+                senador['ID'] = sen.codigoparlamentar.string
+                senador['ANO_MANDATO'] = "--"
+                senador['LEGISLATURA'] = sen.legislaturainicio.string + "/" + sen.legislaturafim.string
+                senador['URL_FOTO'] = ""
+                politicos = politicos.append(senador,ignore_index=True)
+                print("Adicionado político: "+nome)
+    politicos.to_csv(path+"senadores.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+
+
+def descompactar_arquivos():
+    os.system("bunzip2 "+path+"*.bz2")
+
+def compactar_arquivos():
+    os.system("bzip2 -9 "+path+"*.csv "+path+"*.json")
+
+def baixa_fotos():
+    #cria diretório paras as fotos, se não houver
+    if not os.path.isdir(path+"fotos"):
+        print("Criando diretório para as fotos")
+        os.system("mkdir "+path)
+        os.system("mkdir "+path+"fotos")
+
+    politicos = read_csv(path+"senadores.csv",sep=";")
+    sen_sem_foto = politicos[politicos.URL_FOTO.isnull()]
+    sen_sem_foto = list(sen_sem_foto["NOME_CASA"])
+    sen_com_foto = []
+
+    for l in legislaturas:
+        url = "http://legis.senado.leg.br/dadosabertos/senador/lista/legislatura/"+l
+        bs = BeautifulSoup(urlopen(url).read())
+        senadores = bs.findAll("parlamentar")
+
+        for s in senadores:
+            nome = remover_acentos(s.nomeparlamentar.string)
+            if nome in sen_sem_foto:
+                if nome not in sen_com_foto:
+                    codigo = str(list(politicos[politicos.NOME_CASA == nome]["ID"])[0])
+                    try:
+                        urllib.request.urlretrieve(s.urlfotoparlamentar.string, path+"fotos/sen_"+codigo+".jpg")
+                        politicos.loc[politicos.NOME_CASA == nome,"URL_FOTO"] = "sen_" + codigo+".jpg"
+                        sen_com_foto.append(nome)
+                    except urllib.error.HTTPError:
+                        pass
+
+                print(s.urlfotoparlamentar.string)
+                #politicos.loc[politicos.POLITICO == dep_sem_acento]["URL_FOTO"] = d.urlfoto.string
+    #    politicos["ANO_MANDATO"] = politicos["ANO_MANDATO"].apply(int)
+    #    politicos["LEGISLATURA"] = politicos["LEGISLATURA"].apply(int)
+    politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
+    politicos.to_csv(path+"senadores.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 
 def descompactar_arquivos():
@@ -343,12 +449,22 @@ def descompactar_arquivos():
 
 
 def compactar_arquivos():
-    os.system("bzip2 -9 "+path+"*.csv "+path+"*.json")
+    os.system("bzip2 -9 "+path+"*.csv")
 
+legislaturas = ["54","55","56"]
 
-path = os.path.dirname(os.path.abspath(__file__))+"/"
 mandato = "dilma2"
-lider_governo = "Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
-atualiza_votacoes("01012015","08032015")
-#compactar_arquivos()
-#gera_json_basometro()
+path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
+lider_governo = "Humberto Costa" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
+
+descompactar_arquivos()
+#atualiza_votacoes("01012015","31032015")
+
+limpar_votos()
+testa_voto()
+#baixa_fotos()
+#print("NAO ESQUECA DE DSCREVER AS VOTACOES")
+
+gera_json_basometro()
+compactar_arquivos()
+

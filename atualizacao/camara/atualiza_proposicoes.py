@@ -269,10 +269,6 @@ def rice(vetor):
 	return(abs(rice))
 
 
-
-
-
-
 def codigo_votacao(votacao,codigo_proposicao):
     """Gera um código único para cada votação"""
     return hashlib.md5((votacao["data_votacao"]+votacao["hora_votacao"]+votacao["resumo"]+codigo_proposicao).encode()).hexdigest()
@@ -933,7 +929,6 @@ def checa_deputado():
         colunas = ['POLITICO', 'NOME_CASA','PARTIDO',"UF",'ID',"ANO_MANDATO","LEGISLATURA","URL_FOTO"]
         politicos = DataFrame(columns=colunas)
 
-
     lista_politicos = []
     partido = {} #aqui é para guardar o partido de cada político
 
@@ -1031,7 +1026,6 @@ def checa_proposicoes():
     #for p in list(votos["ID_VOTACAO"]):
     #    if not (p in list(props["ID_VOTACAO"])):
     #        print("hue")
-
 
 def deputados_hoje():
 #    url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
@@ -1132,7 +1126,7 @@ def junta_variancia():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
-ano = 2004
+ano = 2015
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
@@ -1156,7 +1150,7 @@ descompactar_arquivos()
 #calcula_historico()
 #junta_variancia()
 
-compactar_arquivos()
+#compactar_arquivos()
 
 #OUTROS COMANDOS
 #
