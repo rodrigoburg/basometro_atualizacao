@@ -1,14 +1,15 @@
 #-*- coding: utf-8 -*-
 #!/usr/bin/python3
 
-#Este arquivo calcula qual é o porcentual de vezes que cada uma das lideranças de bancadas na Câmara dos Deputados orientou as votações de acordo com a orientação do governo. O pré-requisito para rodá-lo é ter o arquivo "orientacoes.csv" - obtido por meio do script no arquivo atualiza_proposições.py - no diretório local. 
-
-#A função principal que articula todas as outras é a faz_consulta(datas). O parâmetro "datas" deve ser uma lista contendo ao menos uma outra lista com a data de início e de fim do intervalo em que a fidelidade será calculada. Essa lista "datas" pode ter inúmeras listas com o intervalo dentro delas - o resultado final será mostrado de acordo com esses períodos passados como parâmetro. A única observação é que o script não funcionará se forem usados intervalos para os quais não existem registros no arquivo de orientações. 
-
-#O resultado do script é dividido em duas partes: 1) o log que é impresso após a execução, mostrando uma tabela com as bancadas e os valores absolutos e porcentuais para a fidelidade em cada um dos intervalos; e 2) um arquivo "analise_orientacoes.csv", onde é apresentada a fidelidade todas as bancadas que apareceram nos intervalos pesquisados (as bancadas são as linhas e os períodos as colunas)
-
-#O script calcula a fidelidade seguindo os seguintes parâmetros: 1) se o governo não orientou a votação, ela não entra no cálculo; 2) se o governo orientou a votação como "Liberado", ela também não entra no cálculo; 3) se o governo orientou "sim", "não" ou "obstrução", a bancada é fiel se ela orientar exatamente a mesma coisa. Esta lógica pode ser modificada na função "testa_voto" neste arquivo
-
+#Este arquivo calcula qual é o porcentual de vezes que cada uma das lideranças de bancadas na Câmara dos Deputados orientou as votações de acordo com a orientação do governo.
+# O pré-requisito para rodá-lo é ter o arquivo "orientacoes.csv" - obtido por meio do script no arquivo atualiza_proposições.py - no diretório local.
+#A função principal que articula todas as outras é a faz_consulta(datas). O parâmetro "datas" deve ser uma lista contendo ao menos uma outra lista com a data de início e de fim do intervalo em que a fidelidade será calculada.
+#  Essa lista "datas" pode ter inúmeras listas com o intervalo dentro delas - o resultado final será mostrado de acordo com esses períodos passados como parâmetro. A única observação é que o script não funcionará se forem usados intervalos para os quais não existem registros no arquivo de orientações.
+#O resultado do script é dividido em duas partes: 1) o log que é impresso após a execução, mostrando uma tabela com as bancadas e os valores absolutos e porcentuais para a fidelidade em cada um dos intervalos;
+# e 2) um arquivo "analise_orientacoes.csv", onde é apresentada a fidelidade todas as bancadas que apareceram nos intervalos pesquisados (as bancadas são as linhas e os períodos as colunas)
+#O script calcula a fidelidade seguindo os seguintes parâmetros: 1) se o governo não orientou a votação, ela não entra no cálculo;
+# 2) se o governo orientou a votação como "Liberado", ela também não entra no cálculo; 3) se o governo orientou "sim", "não" ou "obstrução", a bancada é fiel se ela orientar exatamente a mesma coisa.
+# Esta lógica pode ser modificada na função "testa_voto" neste arquivo
 #OBS: os dados de orientações coletados pelo atualiza_proposições.py só estão disponíveis pela Câmara dos Deputados de 1998 em diante.
 
 import csv
