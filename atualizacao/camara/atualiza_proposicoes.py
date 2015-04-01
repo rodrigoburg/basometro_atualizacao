@@ -524,6 +524,7 @@ def calcula_governismo(props,df_votos):
     aux_variancia = []
     num_votos = 0
     aux_deputados = []
+    aux_rice = []
 
     #para cada proposição dos dicionários
     for p in df_props:
@@ -540,6 +541,7 @@ def calcula_governismo(props,df_votos):
             #faz a média da coluna resultado e passa isso para uma lista
             resultado.append(np.average(list(subvotos["RESULTADO"])))
             aux_variancia.append(np.var(list(subvotos["RESULTADO"])))
+            aux_rice.append(rice(list(subvotos["RESULTADO"])))
             aux_deputados.append(len(subvotos))
             num_votos += len(subvotos)
         except KeyError:
@@ -550,7 +552,8 @@ def calcula_governismo(props,df_votos):
         governismo = media(resultado)
         variancia = media_melhor(aux_variancia)
         num_deputados = media(aux_deputados)
-        return governismo, num_votos, variancia, num_deputados
+        saida_rice = media(aux_rice)
+        return governismo, num_votos, variancia, num_deputados, saida_rice
 
     except ZeroDivisionError:
         return None
@@ -663,6 +666,7 @@ def calcula_historico():
                 item["num_votacoes"] = governismo[1]
                 item["variancia"] = governismo[2]
                 item["num_deputados"] = governismo[3]
+                item["rice"] = governismo[4]
         aux_saida["Geral"][mes] = item
 
         #"cálculo" do número de proposições existentes em cada mês
@@ -691,6 +695,7 @@ def calcula_historico():
                     item["num_votacoes"] = governismo[1]
                     item["variancia"] = int(round(governismo[2]*100))
                     item["num_deputados"] = int(round(governismo[3]))
+                    item["rice"] = int(round(governismo[4]*100))
             aux_saida[partido][mes] = item
 
     saida = {}
@@ -715,6 +720,7 @@ def calcula_historico():
                 soma_movel = 0
                 variancia_movel = 0
                 num_deputados_movel = 0
+                rice_movel = 0
                 total_local_votacoes = 0
                 while contador < 6 and (indice - contador >= 0): #2 porque quero pegar os últimos 6 meses
                     #se existir governismo e variancia para esse partido nesse período...
@@ -722,12 +728,14 @@ def calcula_historico():
                         soma_movel += aux_saida[partido][meses[indice - contador]]["valor"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                         variancia_movel += aux_saida[partido][meses[indice - contador]]["variancia"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                         num_deputados_movel += aux_saida[partido][meses[indice - contador]]["num_deputados"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        rice_movel += aux_saida[partido][meses[indice - contador]]["rice"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                         total_local_votacoes += aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                     contador+=1
                 #Se o total_local_de_votacoes for maior que zero, ou seja, se tem votação considerada...
                 if total_local_votacoes > 0:
                     item["valor"] = int(round((soma_movel / total_local_votacoes),0))
                     item["variancia"] = int(round((variancia_movel / total_local_votacoes),0))
+                    item["rice"] = int(round((rice_movel / total_local_votacoes),0))
                     item["num_deputados"] = int(round((num_deputados_movel / total_local_votacoes),0))
                 else:
                     item["valor"] = -1
@@ -749,13 +757,16 @@ def calcula_historico():
             variancia = []
             governismo = []
             num_deputados = []
+            rice = []
             for i in saida[sigla]:
                 if "variancia" in i:
                     data = i["date"]
                     variancia.append([data, i["variancia"]])
+                    rice.append([data,i["variancia"]])
                     governismo.append([data, i["valor"]])
                     num_deputados.append([data,i["num_deputados"]])
             item["variancia"] = variancia
+            item["rice"] = rice
             item["governismo"] = governismo
             item["num_deputados"] = num_deputados
             aux_variancia.append(item)
@@ -1095,7 +1106,7 @@ def baixa_fotos():
 
 def junta_variancia():
     mandatos = ["lula1","lula2","dilma1","dilma2"]
-    variaveis = ["governismo","variancia","num_deputados"]
+    variaveis = ["governismo","variancia","num_deputados", "rice"]
     partidos = {}
     for m in mandatos:
         with open(m+'/variancia_'+m+'_camara.json') as json_data:
@@ -1126,13 +1137,18 @@ def junta_variancia():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
-ano = 2015
-mandato = acha_mandato(ano)
-path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
+ano = 2014
+for ano in [2004,2008,2012,2015]:
+    mandato = acha_mandato(ano)
+    path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
+    descompactar_arquivos()
+    calcula_historico()
+    compactar_arquivos()
 
+junta_variancia()
 #ATUALIZA O BASOMETRO
 #
-descompactar_arquivos()
+    
 #obter_proposicoes(ano)
 
 #CHECA OS DEPUTADOS
@@ -1143,6 +1159,9 @@ descompactar_arquivos()
 #baixa_fotos()
 #print("AGORA NÃO SE ESQUEÇA DE COLOCAR A EXPLICAÇÃO PARA AS VOTAÇÕES")
 
+
+
+
 #GERA SAÍDA E COMPACTA
 #
 #pega_deputados_atuais()
@@ -1150,8 +1169,10 @@ descompactar_arquivos()
 #calcula_historico()
 #junta_variancia()
 
-#compactar_arquivos()
-
+    
 #OUTROS COMANDOS
 #
 #saida_indice_rice(mandato)
+
+
+
