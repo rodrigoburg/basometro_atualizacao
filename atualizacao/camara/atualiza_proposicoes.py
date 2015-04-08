@@ -251,6 +251,7 @@ def media_algarismos(numero):
         soma += int(i)
     return str(int(soma/len(numero)))
 
+<<<<<<< HEAD
 def rice(vetor):
 	if ( len(vetor) <= 1 ):
 		return(0)
@@ -268,6 +269,24 @@ def rice(vetor):
 	rice = (n_one - n_zero)/(n_one + n_zero)
 	print(rice)
 	return(abs(rice))
+=======
+def calcula_rice(vetor):
+    if ( len(vetor) <= 1 ):
+        return(0)
+    n_one = 0
+    n_zero = 0
+    for i in vetor: # Calcula o numero de 1 e 0
+        if i == 0:
+            n_zero += 1
+        elif i == 1:
+            n_one += 1
+        else:
+            continue
+    if ( n_one == 0 and n_zero == 0 ):
+        return(0)
+    rice = (n_one - n_zero)/(n_one + n_zero)
+    return(abs(rice))
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
 
 
 def codigo_votacao(votacao,codigo_proposicao):
@@ -523,6 +542,7 @@ def calcula_governismo(props,df_votos):
 
     resultado = []
     aux_variancia = []
+    aux_rice = []
     num_votos = 0
     aux_deputados = []
     aux_rice = []
@@ -542,7 +562,11 @@ def calcula_governismo(props,df_votos):
             #faz a média da coluna resultado e passa isso para uma lista
             resultado.append(np.average(list(subvotos["RESULTADO"])))
             aux_variancia.append(np.var(list(subvotos["RESULTADO"])))
+<<<<<<< HEAD
             aux_rice.append(rice(list(subvotos["RESULTADO"])))
+=======
+            aux_rice.append(calcula_rice(list(subvotos["RESULTADO"])))
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
             aux_deputados.append(len(subvotos))
             num_votos += len(subvotos)
         except KeyError:
@@ -553,8 +577,13 @@ def calcula_governismo(props,df_votos):
         governismo = media(resultado)
         variancia = media_melhor(aux_variancia)
         num_deputados = media(aux_deputados)
+<<<<<<< HEAD
         saida_rice = media(aux_rice)
         return governismo, num_votos, variancia, num_deputados, saida_rice
+=======
+        rice = media_melhor(aux_rice)
+        return governismo, num_votos, variancia, num_deputados,rice
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
 
     except ZeroDivisionError:
         return None
@@ -625,12 +654,16 @@ def acha_meses(datas):
     return meses
 
 def calcula_historico():
+
     #pega arquivo de proposições e conserta maiúsculas/minúsculas/acento
     props = read_csv(mandato+"/proposicoes.csv",sep=";")
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
 
     #transforma as datas em string e coloca zero na frente dos anos que perderam esse zero
     props["DATA"] = props["DATA"].apply(lambda d: "%06d" % d)
+
+    #agora pega arquivo de orientações e faz parecido
+    oris = read_csv(mandato+"/orientacoes.csv",sep=";")
 
     #acha lista de combinações ano/mês
     datas = list(set(list(props["DATA"])))
@@ -696,7 +729,12 @@ def calcula_historico():
                     item["num_votacoes"] = governismo[1]
                     item["variancia"] = int(round(governismo[2]*100))
                     item["num_deputados"] = int(round(governismo[3]))
+<<<<<<< HEAD
                     item["rice"] = int(round(governismo[4]*100))
+=======
+                    item["rice"] = int(governismo[4]*100)
+
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
             aux_saida[partido][mes] = item
 
     saida = {}
@@ -728,16 +766,19 @@ def calcula_historico():
                     if aux_saida[partido][meses[indice - contador]]["valor"] > 0:
                         soma_movel += aux_saida[partido][meses[indice - contador]]["valor"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                         variancia_movel += aux_saida[partido][meses[indice - contador]]["variancia"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        rice_movel += aux_saida[partido][meses[indice - contador]]["rice"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                         num_deputados_movel += aux_saida[partido][meses[indice - contador]]["num_deputados"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                         rice_movel += aux_saida[partido][meses[indice - contador]]["rice"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                         total_local_votacoes += aux_saida[partido][meses[indice - contador]]["num_votacoes"]
                     contador+=1
+
                 #Se o total_local_de_votacoes for maior que zero, ou seja, se tem votação considerada...
                 if total_local_votacoes > 0:
                     item["valor"] = int(round((soma_movel / total_local_votacoes),0))
                     item["variancia"] = int(round((variancia_movel / total_local_votacoes),0))
                     item["rice"] = int(round((rice_movel / total_local_votacoes),0))
                     item["num_deputados"] = int(round((num_deputados_movel / total_local_votacoes),0))
+                    item["rice"] = int(round((rice_movel / total_local_votacoes),0))
                 else:
                     item["valor"] = -1
                 #print(partido,total_local_votacoes,soma_movel,aux_saida[partido][mes]["valor"], item["valor"])
@@ -766,10 +807,16 @@ def calcula_historico():
                     rice.append([data,i["variancia"]])
                     governismo.append([data, i["valor"]])
                     num_deputados.append([data,i["num_deputados"]])
+<<<<<<< HEAD
             item["variancia"] = variancia
             item["rice"] = rice
+=======
+                    rice.append([data, i["rice"]])
+            item["dispersao"] = variancia
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
             item["governismo"] = governismo
             item["num_deputados"] = num_deputados
+            item["rice"] = rice
             aux_variancia.append(item)
 
     with open (mandato+"/variancia_"+mandato+"_camara.json","w",encoding='UTF8') as jsonfile:
@@ -1107,7 +1154,11 @@ def baixa_fotos():
 
 def junta_variancia():
     mandatos = ["lula1","lula2","dilma1","dilma2"]
+<<<<<<< HEAD
     variaveis = ["governismo","variancia","num_deputados", "rice"]
+=======
+    variaveis = ["governismo","dispersao","num_deputados","rice"]
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
     partidos = {}
     for m in mandatos:
         with open(m+'/variancia_'+m+'_camara.json') as json_data:
@@ -1138,6 +1189,7 @@ def junta_variancia():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
+<<<<<<< HEAD
 ano = 2014
 for ano in [2004,2008,2012,2015]:
     mandato = acha_mandato(ano)
@@ -1147,6 +1199,12 @@ for ano in [2004,2008,2012,2015]:
     compactar_arquivos()
 
 junta_variancia()
+=======
+ano = 2004
+mandato = acha_mandato(ano)
+path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
+
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
 #ATUALIZA O BASOMETRO
 #
     
@@ -1167,10 +1225,16 @@ junta_variancia()
 #
 #pega_deputados_atuais()
 #gera_json_basometro()
-#calcula_historico()
-#junta_variancia()
 
+#calcula_historico()
+junta_variancia()
+
+<<<<<<< HEAD
     
+=======
+compactar_arquivos()
+
+>>>>>>> 1e5101c4377bafcaad0af7e78d1598dee1709d33
 #OUTROS COMANDOS
 #
 #saida_indice_rice(mandato)
