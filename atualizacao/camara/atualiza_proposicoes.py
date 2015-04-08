@@ -266,6 +266,7 @@ def rice(vetor):
 	if ( n_one == 0 and n_zero == 0 ):
 		return(0)
 	rice = (n_one - n_zero)/(n_one + n_zero)
+	print(rice)
 	return(abs(rice))
 
 
