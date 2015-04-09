@@ -1140,6 +1140,9 @@ def junta_variancia():
     mandatos = ["lula1","lula2","dilma1","dilma2"]
     variaveis = ["governismo","dispersao","num_deputados","rice","fidelidade_lider"]
     partidos = {}
+
+    #variável que vai ser usada para expostar os dados em formato CSV para consulta visual
+
     for m in mandatos:
         with open(m+'/variancia_'+m+'_camara.json') as json_data:
             temp = json.load(json_data)
@@ -1163,6 +1166,35 @@ def junta_variancia():
                 item[var] = partidos[p][var]
 
         saida.append(item)
+
+    saida_csv = {}
+    #agora vamos fazer a saída do csv
+    for partido in saida:
+        sigla = partido["name"]
+        for var in partido:
+            if var != "name":
+                for item in partido[var]:
+                    data = item[0]
+                    dado = item[1]
+                    if data not in saida_csv:
+                        saida_csv[data] = {"partido":[],"dado":[],"variavel":[]}
+
+                    saida_csv[data]["partido"].append(sigla)
+                    saida_csv[data]["dado"].append(dado)
+                    saida_csv[data]["variavel"].append(var)
+
+    saida_csv_real = {"data":[],"partido":[],"dado":[],"variavel":[]}
+    for data in saida_csv:
+        for index, item in enumerate(saida_csv[data]["dado"]):
+            saida_csv_real["data"].append(data)
+            saida_csv_real["partido"].append(saida_csv[data]["partido"][index])
+            saida_csv_real["dado"].append(saida_csv[data]["dado"][index])
+            saida_csv_real["variavel"].append(saida_csv[data]["variavel"][index])
+
+
+    saida_csv = DataFrame.from_dict(saida_csv_real)
+
+    saida_csv.to_csv("dispersao.csv")
 
     with open ("variancia_camara.json","w",encoding='UTF8') as jsonfile:
         jsonfile.write(json.dumps(saida))
@@ -1235,7 +1267,7 @@ def conserta_bancada(bancada):
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
-ano = 2005
+ano = 2015
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
