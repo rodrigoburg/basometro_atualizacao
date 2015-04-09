@@ -1290,7 +1290,7 @@ descompactar_arquivos()
 #gera_json_basometro()
 
 #calcula_historico()
-junta_variancia()
+#junta_variancia()
 
 compactar_arquivos()
 
