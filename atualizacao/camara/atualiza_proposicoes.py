@@ -806,6 +806,79 @@ def calcula_historico():
         jsonfile.write(json.dumps(aux_variancia))
     print("JSON da variância do mandato " + mandato + " salvo")
 
+    #agora só mais um calculinho, retirando a média móvel para o gráfico do governismo x popularidade
+    saida = {}
+    for partido in aux_saida:
+        if partido != "S.Part.":
+            saida[partido] = []
+            for mes in meses:
+                indice = meses.index(mes) #Pega o índice do mês na lista
+                item = {}
+                item["date"] = aux_saida[partido][mes]["date"]
+                if item["date"][2] == "9":
+                    item["date"] = "19" + item["date"][2:]
+                contador = 0
+                soma_movel = 0
+                variancia_movel = 0
+                num_deputados_movel = 0
+                rice_movel = 0
+                fidelidade_movel = 0
+                total_local_votacoes = 0
+                total_fidelidade_votacoes = 0
+                while contador < 2 and (indice - contador >= 0):
+                    if aux_saida[partido][meses[indice - contador]]["valor"] > 0:
+                        soma_movel += aux_saida[partido][meses[indice - contador]]["valor"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        variancia_movel += aux_saida[partido][meses[indice - contador]]["variancia"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        rice_movel += aux_saida[partido][meses[indice - contador]]["rice"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        num_deputados_movel += aux_saida[partido][meses[indice - contador]]["num_deputados"] * aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        total_local_votacoes += aux_saida[partido][meses[indice - contador]]["num_votacoes"]
+                        #checa se temos fidelidade para esse partido
+                        if "fidelidade_lider" in aux_saida[partido][meses[indice - contador]]:
+                            fidelidade_movel += aux_saida[partido][meses[indice - contador]]["fidelidade_lider"] * aux_saida[partido][meses[indice - contador]]["num_fidelidade"]
+                            total_fidelidade_votacoes += aux_saida[partido][meses[indice - contador]]["num_fidelidade"]
+                    contador+=1
+                if total_local_votacoes > 0:
+                    item["valor"] = int(round((soma_movel / total_local_votacoes),0))
+                    item["variancia"] = int(round((variancia_movel / total_local_votacoes),0))
+                    item["num_deputados"] = int(round((num_deputados_movel / total_local_votacoes),0))
+                    item["rice"] = int(round((rice_movel / total_local_votacoes),0))
+                    if fidelidade_movel > 0:
+                        item["fidelidade_lider"] = int(round((fidelidade_movel / total_fidelidade_votacoes),0))
+                else:
+                    item["valor"] = -1
+                saida[partido].append(item)
+
+    aux_variancia = []
+    for sigla in saida:
+        if sigla != "Geral":
+            item = {}
+            item["name"] = sigla
+            variancia = []
+            governismo = []
+            num_deputados = []
+            rice = []
+            fidelidade_lider = []
+            for i in saida[sigla]:
+                if "variancia" in i:
+                    data = i["date"]
+                    variancia.append([data, i["variancia"]])
+                    governismo.append([data, i["valor"]])
+                    num_deputados.append([data,i["num_deputados"]])
+                    rice.append([data, i["rice"]])
+                    if "fidelidade_lider" in i:
+                        fidelidade_lider.append([data,i["fidelidade_lider"]])
+            item["dispersao"] = variancia
+            item["governismo"] = governismo
+            item["num_deputados"] = num_deputados
+            item["rice"] = rice
+            item["fidelidade_lider"] = fidelidade_lider
+            aux_variancia.append(item)
+
+    with open (mandato+"/variancia_"+mandato+"_camara_mes.json","w",encoding='UTF8') as jsonfile:
+        jsonfile.write(json.dumps(aux_variancia))
+    print("JSON da variância do mandato " + mandato + " sem média móvel salvo")
+
+
 
 
 def cruza_votacao(votos,partido):
@@ -1196,9 +1269,35 @@ def junta_variancia():
 
     saida_csv.to_csv("dispersao.csv")
 
-    with open ("variancia_camara.json","w",encoding='UTF8') as jsonfile:
+    #agora mais uns calculinhos pra ferramenta sem a média_móvel
+    partidos = {}
+    for m in mandatos:
+        with open(m+'/variancia_'+m+'_camara_mes.json') as json_data:
+            temp = json.load(json_data)
+            for partido in temp:
+                sigla = partido["name"]
+                if sigla not in partidos:
+                    partidos[sigla] = {}
+                    for var in variaveis:
+                        partidos[sigla][var] = []
+
+                for var in partido:
+                    if var != "name":
+                        partidos[sigla][var] += (partido[var])
+
+    saida = []
+    for p in partidos:
+        item = {}
+        item["name"] = p
+        for var in partidos[p]:
+            if var != "name":
+                item[var] = partidos[p][var]
+
+        saida.append(item)
+
+    with open ("variancia_camara_mes.json","w",encoding='UTF8') as jsonfile:
         jsonfile.write(json.dumps(saida))
-    print("JSON da variância total salvo")
+    print("JSON da variância total sem média móvel salvo")
 
 def pega_orientacoes():
     with open(path+"orientacoes.csv","r") as file:
@@ -1289,8 +1388,9 @@ descompactar_arquivos()
 #pega_deputados_atuais()
 #gera_json_basometro()
 
+#HISTÓRICO E VARIANCIA
 #calcula_historico()
-#junta_variancia()
+junta_variancia()
 
 compactar_arquivos()
 
