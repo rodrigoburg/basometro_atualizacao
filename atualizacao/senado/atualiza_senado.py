@@ -455,13 +455,13 @@ legislaturas = ["54","55","56"]
 
 mandato = "dilma2"
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
-lider_governo = "Humberto Costa" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
+lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
 
 descompactar_arquivos()
-#atualiza_votacoes("01012015","31032015")
+#atualiza_votacoes("01012015","30042015")
 
-limpar_votos()
-testa_voto()
+#limpar_votos()
+#testa_voto()
 #baixa_fotos()
 #print("NAO ESQUECA DE DSCREVER AS VOTACOES")
 

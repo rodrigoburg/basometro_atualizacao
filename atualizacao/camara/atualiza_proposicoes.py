@@ -615,6 +615,7 @@ def conserta_voto(voto):
         "Não":"NAO",
         "OBSTRUÇÃO":"NAO",
         "OBSTRUCAO":"NAO",
+        "ABSTENCAO":"NAO",
         "NÃO":"NAO"
     }
     if voto in traducao:
@@ -1240,6 +1241,10 @@ def junta_variancia():
 
         saida.append(item)
 
+    with open ("variancia_camara.json","w",encoding='UTF8') as jsonfile:
+        jsonfile.write(json.dumps(saida))
+        print("JSON da variância total salvo")
+
     saida_csv = {}
     #agora vamos fazer a saída do csv
     for partido in saida:
@@ -1363,6 +1368,38 @@ def conserta_bancada(bancada):
     else:
         return bancada.upper()
 
+
+def analisa_votacoes():
+    ori = pega_orientacoes()
+    votos = read_csv(mandato+"/votos.csv",sep=";")
+    props = read_csv(mandato+"/proposicoes.csv",sep=";")
+    temp = props[["ID_VOTACAO","ORIENTACAO_GOVERNO"]]
+    temp.index = temp["ID_VOTACAO"]
+    del temp["ID_VOTACAO"]
+    temp = temp.to_dict()
+    temp = temp["ORIENTACAO_GOVERNO"]
+    votos["ORIENTACAO_GOVERNO"] = votos.apply(lambda t:temp[t["ID_VOTACAO"]],axis=1)
+    votos["ORIENTACAO_GOVERNO"] = votos["ORIENTACAO_GOVERNO"].apply(conserta_voto)
+    votos["VOTO"] = votos["VOTO"].apply(conserta_voto)
+    votos["VOTOU_IGUAL"] = votos.apply(lambda t:1 if t["VOTO"] == t["ORIENTACAO_GOVERNO"] else 0,axis=1)
+    governismo = {}
+
+    for votacao in set(votos["ID_VOTACAO"]):
+        temp = votos[votos.ID_VOTACAO == votacao]
+        gov = sum(temp["VOTOU_IGUAL"])*100/len(temp["VOTOU_IGUAL"])
+        governismo[votacao] = gov
+
+    props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
+
+    for key in ori:
+        votacoes = ori[key]
+        props[key] = props.apply(lambda t:("IGUAL GOVERNO" if votacoes[t["ID_VOTACAO"]] == t["ORIENTACAO_GOVERNO"] else "DIFERENTE") if t["ID_VOTACAO"] in votacoes else "NA",axis=1)
+
+
+    props["GOVERNISMO"] = props["ID_VOTACAO"].apply(lambda t:governismo[t])
+
+    props.to_csv("orien.csv",index=False)
+
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
@@ -1390,7 +1427,7 @@ descompactar_arquivos()
 
 #HISTÓRICO E VARIANCIA
 #calcula_historico()
-junta_variancia()
+#junta_variancia()
 
 compactar_arquivos()
 
