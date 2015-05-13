@@ -254,6 +254,8 @@ def codigo_votacao(votacao,codigo_proposicao):
     """Gera um código único para cada votação"""
     return hashlib.md5((votacao["data_votacao"]+votacao["hora_votacao"]+votacao["resumo"]+codigo_proposicao).encode()).hexdigest()
 
+def cria_id(nome):
+    return hashlib.md5(nome.encode()).hexdigest()
 
 def parse_data_votacao(votacao):
     """recupera a data da votação"""
@@ -1108,7 +1110,7 @@ def adiciona_deputados(lista_deputados,politicos,partido):
                     deputado["NOME_CASA"] = dep_sem_acento
                     deputado["PARTIDO"] = i.legendapartidoeleito.string
                     deputado["UF"] = i.ufeleito.string
-                    deputado["ID"] = i.idecadastro.string
+                    deputado["ID"] = i.idecadastro.string if i.idecadastro.string.strip() != "" else cria_id(dep_sem_acento)
                     deputado["LEGISLATURA"] = i.numlegislatura.string
                     deputado["ANO_MANDATO"] = "2011" if deputado["LEGISLATURA"] == "54" else "2007"
                     deputado["URL_FOTO"] = ""
@@ -1117,11 +1119,11 @@ def adiciona_deputados(lista_deputados,politicos,partido):
 
         if not deputado:
             print("Erro no deputado: "+d)
-            deputado["POLITICO"] =  d
+            deputado["POLITICO"] = d
             deputado["NOME_CASA"] = d
             deputado["PARTIDO"] = partido[d]
             deputado["UF"] = "NA"
-            deputado["ID"] = "NA"
+            deputado["ID"] = cria_id(d)
             deputado["LEGISLATURA"] = "NA"
             deputado["ANO_MANDATO"] = "NA"
             deputado["URL_FOTO"] = ""
@@ -1373,28 +1375,47 @@ def analisa_votacoes():
     ori = pega_orientacoes()
     votos = read_csv(mandato+"/votos.csv",sep=";")
     props = read_csv(mandato+"/proposicoes.csv",sep=";")
-    temp = props[["ID_VOTACAO","ORIENTACAO_GOVERNO"]]
+    temp = props[["ID_VOTACAO","ORIENTACAO_GOVERNO","LINGUAGEM_COMUM","O_QUE_FOI_VOTADO"]]
     temp.index = temp["ID_VOTACAO"]
     del temp["ID_VOTACAO"]
     temp = temp.to_dict()
-    temp = temp["ORIENTACAO_GOVERNO"]
-    votos["ORIENTACAO_GOVERNO"] = votos.apply(lambda t:temp[t["ID_VOTACAO"]],axis=1)
+    temp1 = temp["ORIENTACAO_GOVERNO"]
+    temp2 = temp["LINGUAGEM_COMUM"]
+    temp3 = temp["O_QUE_FOI_VOTADO"]
+    votos["ORIENTACAO_GOVERNO"] = votos.apply(lambda t:temp1[t["ID_VOTACAO"]],axis=1)
     votos["ORIENTACAO_GOVERNO"] = votos["ORIENTACAO_GOVERNO"].apply(conserta_voto)
+    votos["LINGUAGEM_COMUM"] = votos.apply(lambda t:temp2[t["ID_VOTACAO"]],axis=1)
+    votos["O_QUE_FOI_VOTADO"] = votos.apply(lambda t:temp3[t["ID_VOTACAO"]],axis=1)
     votos["VOTO"] = votos["VOTO"].apply(conserta_voto)
     votos["VOTOU_IGUAL"] = votos.apply(lambda t:1 if t["VOTO"] == t["ORIENTACAO_GOVERNO"] else 0,axis=1)
+
+    votos.to_csv("votos_com_orientacao.csv",index=False)
+
     governismo = {}
+    partidos = {}
 
     for votacao in set(votos["ID_VOTACAO"]):
         temp = votos[votos.ID_VOTACAO == votacao]
         gov = sum(temp["VOTOU_IGUAL"])*100/len(temp["VOTOU_IGUAL"])
         governismo[votacao] = gov
+        for p in set(temp["PARTIDO"]):
+            if p not in partidos:
+                partidos[p] = {}
+            temp2 = temp[temp.PARTIDO == p]
+            gov = sum(temp2["VOTOU_IGUAL"])*100/len(temp2["VOTOU_IGUAL"])
+            partidos[p][votacao] = gov
 
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
 
-    for key in ori:
-        votacoes = ori[key]
-        props[key] = props.apply(lambda t:("IGUAL GOVERNO" if votacoes[t["ID_VOTACAO"]] == t["ORIENTACAO_GOVERNO"] else "DIFERENTE") if t["ID_VOTACAO"] in votacoes else "NA",axis=1)
+    #coloca colunas nas orientações
+    #for key in ori:
+    #    votacoes = ori[key]
+    #    props[key] = props.apply(lambda t:("IGUAL GOVERNO" if votacoes[t["ID_VOTACAO"]] == t["ORIENTACAO_GOVERNO"] else "DIFERENTE") if t["ID_VOTACAO"] in votacoes else "NA",axis=1)
 
+    #coloca coliuna no governismo de cada partido
+    for key in partidos:
+        votacoes = partidos[key]
+        props[key] = props.apply(lambda t:votacoes[t["ID_VOTACAO"]] if t["ID_VOTACAO"] in votacoes else "NA",axis=1)
 
     props["GOVERNISMO"] = props["ID_VOTACAO"].apply(lambda t:governismo[t])
 
@@ -1434,3 +1455,5 @@ compactar_arquivos()
 #OUTROS COMANDOS
 #
 #saida_indice_rice(mandato)
+
+#analisa_votacoes()
