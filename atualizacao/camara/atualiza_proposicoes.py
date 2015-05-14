@@ -1436,18 +1436,18 @@ descompactar_arquivos()
 #CHECA OS DEPUTADOS
 #
 #limpar_votos()
-checa_proposicoes()
-checa_deputado()
-baixa_fotos()
-print("AGORA NÃO SE ESQUEÇA DE COLOCAR A EXPLICAÇÃO PARA AS VOTAÇÕES")
+#checa_proposicoes()
+#checa_deputado()
+#baixa_fotos()
+#print("AGORA NÃO SE ESQUEÇA DE COLOCAR A EXPLICAÇÃO PARA AS VOTAÇÕES")
 
 #GERA SAÍDA E COMPACTA
 #
-pega_deputados_atuais()
+#pega_deputados_atuais()
 gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
-calcula_historico()
+#calcula_historico()
 #junta_variancia()
 
 compactar_arquivos()
