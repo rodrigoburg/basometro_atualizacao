@@ -457,8 +457,8 @@ mandato = "dilma2"
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
 
-#descompactar_arquivos()
-#atualiza_votacoes("01012015","30042015")
+descompactar_arquivos()
+#atualiza_votacoes("01032015","30052015")
 
 #limpar_votos()
 #testa_voto()
