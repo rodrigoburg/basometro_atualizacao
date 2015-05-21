@@ -29,6 +29,7 @@ def traduz_partido(part):
     partidos = {
             'SD': 'SDD',
             'S/PARTIDO': 'S.Part.',
+            "S/Partido": 'S.Part.'
             }
     if part in partidos:
         return partidos[part]
@@ -355,6 +356,7 @@ def remover_acentos(txt):
 def limpar_votos():
     votos = read_csv(path+"senado_votos.csv",sep=";")
     votos["POLITICO"] = votos["POLITICO"].apply(remover_acentos)
+    votos["PARTIDO"] = votos["PARTIDO"].apply(traduz_partido)
     votos.to_csv(path+"senado_votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def testa_voto():
@@ -460,8 +462,8 @@ lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER 
 descompactar_arquivos()
 #atualiza_votacoes("01032015","30052015")
 
-#limpar_votos()
-#testa_voto()
+limpar_votos()
+testa_voto()
 #baixa_fotos()
 #print("NAO ESQUECA DE DSCREVER AS VOTACOES")
 

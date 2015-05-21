@@ -1443,12 +1443,12 @@ descompactar_arquivos()
 
 #GERA SAÍDA E COMPACTA
 #
-pega_deputados_atuais()
-gera_json_basometro()
+#pega_deputados_atuais()
+#gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
-calcula_historico()
-junta_variancia()
+#calcula_historico()
+#junta_variancia()
 
 compactar_arquivos()
 
