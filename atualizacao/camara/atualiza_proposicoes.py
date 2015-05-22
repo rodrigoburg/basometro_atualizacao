@@ -1166,8 +1166,9 @@ def deputados_hoje():
     print(len(gabinetes))
 
 def baixa_fotos():
-    #ATENCAO: código pode ser usado tanto para baixar as fotos antigas de um governo que já estejam no arquivo de deputados quanto para baixar
-    #fotos de deputados novos acrescentados na checagem de deputados rotineira. Comente a parte do código que você não for usar
+    #ATENCAO: código pode ser usado tanto para baixar as fotos antigas de um governo que já estejam no arquivo de
+    # deputados - e sem nada na coluna de fotos -  quanto para baixar fotos de deputados novos acrescentados na rotina
+    #Comente a parte do código que você não for usar
 
     #cria diretório paras as fotos, se não houver
     if not os.path.isdir(mandato+"/fotos"):
@@ -1189,11 +1190,15 @@ def baixa_fotos():
             except (urllib.error.HTTPError):
                 politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"'''
 
-
-    #pega fotos novas
+    #descobre o nome de deputados que estão sem foto
     deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
     deps_sem_foto = list(deps_sem_foto["NOME_CASA"])
-    #url = "file://"+path+"/Deputados.xml"
+    deps_sem_foto2 = politicos[politicos.URL_FOTO == "sem_foto.jpg"]
+    deps_sem_foto = deps_sem_foto + list(deps_sem_foto2["NOME_CASA"])
+
+    print("***** Deputados sem foto ******")
+    print(deps_sem_foto)
+    #pega fotos novas
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
     deputados = dados.findAll("deputado")
@@ -1202,12 +1207,11 @@ def baixa_fotos():
         if dep_sem_acento in deps_sem_foto:
             codigo = str(list(politicos[politicos.NOME_CASA == dep_sem_acento]["ID"])[0])
             try:
-                urllib.request.urlretrieve(d.urlfoto.string, path+"/"+mandato+"/fotos/dep_"+codigo+".jpg")
+                urllib.request.urlretrieve(d.urlfoto.string, path+"fotos/dep_"+codigo+".jpg")
                 politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = "dep_"+codigo+".jpg"
-                print(d.urlfoto.string)
+                print("Encontrou foto de: "+d.urlfoto.string)
             except: #se não achar foto
-                print("falta_foto: "+dep_sem_acento)
-                continue
+                print("Não encontrou foto de: "+dep_sem_acento)
 
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos.to_csv(path+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
@@ -1443,8 +1447,8 @@ descompactar_arquivos()
 
 #GERA SAÍDA E COMPACTA
 #
-#pega_deputados_atuais()
-#gera_json_basometro()
+pega_deputados_atuais()
+gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
 #calcula_historico()
