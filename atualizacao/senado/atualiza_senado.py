@@ -55,7 +55,6 @@ def traduz_nome(txt):
     else:
         return saida
 
-
 def busca_novas_proposicoes(datas,prop_antigas):
     contador = 0
     #para cada data
@@ -113,7 +112,6 @@ def busca_novas_proposicoes(datas,prop_antigas):
 
     print("Foram adicionadas "+str(contador)+" novas proposições ao arquivo.")
 
-
 def traduz_voto(voto):
     voto = voto.strip()
     traducao = {
@@ -133,7 +131,7 @@ def traduz_voto(voto):
         "P-OD":"OBSTRUCAO",
         "PSF":"NAO VOTOU",
         "REP":"NAO VOTOU",
-        "Abstenção":"NAO VOTOU"
+        "Abstenção":"ABSTENCAO"
     }
 
     if voto in traducao:
@@ -460,10 +458,10 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
 
 descompactar_arquivos()
-#atualiza_votacoes("01032015","30052015")
+#atualiza_votacoes("01012015","30052015")
 
-limpar_votos()
-testa_voto()
+#limpar_votos()
+#testa_voto()
 #baixa_fotos()
 #print("NAO ESQUECA DE DSCREVER AS VOTACOES")
 
