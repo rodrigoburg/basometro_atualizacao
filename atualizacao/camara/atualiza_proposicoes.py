@@ -387,7 +387,7 @@ def pega_deputados_atuais():
     connection = urlopen(url)
     data = connection.read()
     bs = BeautifulSoup(data)
-    deputados_atuais = [traduz_nome(deputado.findAll("nomeparlamentar")[0].string) for deputado in bs.findAll("deputado")]
+    deputados_atuais = [conserta_politico(deputado.findAll("nomeparlamentar")[0].string) for deputado in bs.findAll("deputado")]
     with open(path + "deputados_atuais.csv", 'w') as f:
         for dep in deputados_atuais:
             f.write(dep)
@@ -1025,28 +1025,47 @@ def limpar_votos():
 
     votos = read_csv(mandato+"/votos.csv",sep=";", dtype=object)
     props = read_csv(mandato+"/proposicoes.csv",sep=";",dtype=object)
-
-    #arruma nome dos deputados, partidos e votos
-    votos["POLITICO"] = votos["POLITICO"].apply(traduz_nome)
-    votos["VOTO"] = votos["VOTO"].apply(traduz_voto)
-    votos["PARTIDO"] = votos["PARTIDO"].apply(traduz_partido)
-
-    #se tiver a votação do senado no meio da Câmara, retira
-    votos = votos[votos.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
-    props = props[props.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
-
-
-    #arruma o nome
-    votos.to_csv(mandato+"/votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-    props.to_csv(mandato+"/proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-
-def checa_deputado():
-    votos = read_csv(mandato+"/votos.csv",sep=";")
     try:
         politicos = read_csv(mandato+"/deputados.csv",sep=";")
     except OSError: #se não houver arquivo de deputados, cria um DF vazio
         colunas = ['POLITICO', 'NOME_CASA','PARTIDO',"UF",'ID',"ANO_MANDATO","LEGISLATURA","URL_FOTO"]
         politicos = DataFrame(columns=colunas)
+
+    #arruma nome dos deputados, partidos e votos
+    votos["POLITICO"] = votos["POLITICO"].apply(conserta_politico)
+    votos["VOTO"] = votos["VOTO"].apply(traduz_voto)
+    votos["PARTIDO"] = votos["PARTIDO"].apply(traduz_partido)
+    politicos["NOME_CASA"] = politicos["NOME_CASA"].apply(conserta_politico)
+
+    #se tiver a votação do senado no meio da Câmara, retira
+    votos = votos[votos.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
+    props = props[props.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
+
+    #salva os arquivos
+    votos.to_csv(mandato+"/votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    props.to_csv(mandato+"/proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    politicos.to_csv(mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+
+def conserta_politico(politico):
+    traducao = {
+        "ABEL SALVADOR MESQUITA JUNIOR":"ABEL MESQUITA JR.",
+        "WALTER ILHOSHI":"WALTER IHOSHI",
+        "MARIO NEGROMONTE JUNIOR":"MARIO NEGROMONTE JR.",
+        "MAJOR OLIMPIO GOMES":"MAJOR OLIMPIO",
+        "LAERTE RODRIGUES DE BESSA":"LAERTE BESSA",
+        "JUSCELINO REZENDE FILHO":"JUSCELINO FILHO",
+        "JOAO MARCELO":"JOAO MARCELO SOUZA",
+        "CHICO D ANGELO":"CHICO D'ANGELO",
+        "JOAO MARCELO SOUZA":"JOÃO MARCELO SOUZA",
+        "MARIO NEGROMONTE JR.":"MÁRIO NEGROMONTE JR."
+    }
+    politico = politico.upper()
+
+    return traducao[politico] if politico in traducao else politico
+
+def checa_deputado():
+    votos = read_csv(mandato+"/votos.csv",sep=";")
+    politicos = read_csv(mandato+"/deputados.csv",sep=";")
 
     lista_politicos = []
     partido = {} #aqui é para guardar o partido de cada político
@@ -1063,7 +1082,7 @@ def checa_deputado():
     print("ERRO EM: "+str(len(lista_politicos))+" POLÍTICOS")
 
     print(partido.keys())
-    if (lista_politicos):
+    if lista_politicos:
         adiciona_deputados(lista_politicos,politicos,partido)
 
 def adiciona_deputados(lista_deputados,politicos,partido):
@@ -1090,10 +1109,10 @@ def adiciona_deputados(lista_deputados,politicos,partido):
         deputado = {}
         #procura as infos desse deputado no site
         for i in deputados:
-            dep_sem_acento = traduz_nome(i.nomeparlamentar.string)
-            if (dep_sem_acento == d): #se esse deputado estiver no site
+            dep = conserta_politico(i.nomeparlamentar.string)
+            if (dep == d): #se esse deputado estiver no site
                 deputado["POLITICO"] = i.nomeparlamentar.string
-                deputado["NOME_CASA"] = dep_sem_acento
+                deputado["NOME_CASA"] = dep
                 deputado["PARTIDO"] = i.partido.string
                 deputado["UF"] = i.uf.string
                 deputado["ID"] = i.idparlamentar.string
@@ -1104,13 +1123,13 @@ def adiciona_deputados(lista_deputados,politicos,partido):
         #se esse deputado não estiver no site, procura no arquivo local:
         if not deputado:
             for i in deputados2:
-                dep_sem_acento = traduz_nome(i.nomeparlamentar.string)
-                if (dep_sem_acento == d):
+                dep = conserta_politico(i.nomeparlamentar.string)
+                if (dep == d):
                     deputado["POLITICO"] =  i.nomeparlamentar.string
-                    deputado["NOME_CASA"] = dep_sem_acento
+                    deputado["NOME_CASA"] = dep
                     deputado["PARTIDO"] = i.legendapartidoeleito.string
                     deputado["UF"] = i.ufeleito.string
-                    deputado["ID"] = i.idecadastro.string if i.idecadastro.string.strip() != "" else cria_id(dep_sem_acento)
+                    deputado["ID"] = i.idecadastro.string if i.idecadastro.string.strip() != "" else cria_id(dep)
                     deputado["LEGISLATURA"] = i.numlegislatura.string
                     deputado["ANO_MANDATO"] = "2011" if deputado["LEGISLATURA"] == "54" else "2007"
                     deputado["URL_FOTO"] = ""
@@ -1203,15 +1222,15 @@ def baixa_fotos():
     dados = BeautifulSoup(urlopen(url).read())
     deputados = dados.findAll("deputado")
     for d in deputados:
-        dep_sem_acento = traduz_nome(d.nomeparlamentar.string)
-        if dep_sem_acento in deps_sem_foto:
-            codigo = str(list(politicos[politicos.NOME_CASA == dep_sem_acento]["ID"])[0])
+        dep = conserta_politico(d.nomeparlamentar.string)
+        if dep in deps_sem_foto:
+            codigo = str(list(politicos[politicos.NOME_CASA == dep]["ID"])[0])
             try:
                 urllib.request.urlretrieve(d.urlfoto.string, path+"fotos/dep_"+codigo+".jpg")
-                politicos.loc[politicos.NOME_CASA == dep_sem_acento,"URL_FOTO"] = "dep_"+codigo+".jpg"
+                politicos.loc[politicos.NOME_CASA == dep,"URL_FOTO"] = "dep_"+codigo+".jpg"
                 print("Encontrou foto de: "+d.urlfoto.string)
             except: #se não achar foto
-                print("Não encontrou foto de: "+dep_sem_acento)
+                print("Não encontrou foto de: "+dep)
 
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos.to_csv(path+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
@@ -1447,7 +1466,7 @@ descompactar_arquivos()
 
 #GERA SAÍDA E COMPACTA
 #
-pega_deputados_atuais()
+#pega_deputados_atuais()
 gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
