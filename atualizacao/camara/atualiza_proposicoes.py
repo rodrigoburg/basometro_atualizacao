@@ -1461,29 +1461,29 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #ATUALIZA O BASOMETRO
 #
 descompactar_arquivos()
-obter_proposicoes(ano)
+#obter_proposicoes(ano)
 
 #CHECA OS DEPUTADOS
 #
-limpar_votos()
-checa_proposicoes()
-checa_deputado()
-baixa_fotos()
+#limpar_votos()
+#checa_proposicoes()
+#checa_deputado()
+#baixa_fotos()
 #print("AGORA NÃO SE ESQUEÇA DE COLOCAR A EXPLICAÇÃO PARA AS VOTAÇÕES")
 
-#GERA SAÍDA E COMPACTA
+#GERA SAÍDA
 #
-pega_deputados_atuais()
+#pega_deputados_atuais()
 gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
-calcula_historico()
-junta_variancia()
-
-compactar_arquivos()
+#calcula_historico()
+#junta_variancia()
 
 #OUTROS COMANDOS
 #
 #saida_indice_rice(mandato)
 
 #analisa_votacoes()
+
+compactar_arquivos()

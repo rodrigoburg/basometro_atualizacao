@@ -458,7 +458,7 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
 
 descompactar_arquivos()
-#atualiza_votacoes("01012015","30052015")
+#atualiza_votacoes("30052015","30062015")
 
 #limpar_votos()
 #testa_voto()
