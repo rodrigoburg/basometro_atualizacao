@@ -3,7 +3,7 @@
 
 import urllib.request
 import hashlib
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 import io
 import unicodedata
@@ -152,9 +152,16 @@ def obter_dados_proposicao(prop):
 def pega_dados_API_proposicao(prop):
     """Pega os dados da proposicao de acordo com a API de proposicoes"""
     url = "http://www.camara.gov.br/SitCamaraWS/Proposicoes.asmx/ObterProposicaoPorID?IdProp=" + prop["codigo"]
-    connection = urlopen(url)
-    data = connection.read()
-    bs = BeautifulSoup(data)
+    print("Abrindo proposição: "+url)
+    while True:
+        try:
+            request = Request(url)
+            request.add_header('User-agent', 'Mozilla/5.0 (Linux i686)')
+            bs = BeautifulSoup(urlopen(request).read())
+            break
+        except urllib.error.HTTPError:
+            print("Erro no request da página. Tentando de novo...")
+            continue
     prop["tipo"] = bs.proposicao["tipo"].strip()
     prop["numero"] = bs.proposicao["numero"]
     prop["ano"] = bs.proposicao["ano"]
@@ -1454,24 +1461,24 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #ATUALIZA O BASOMETRO
 #
 descompactar_arquivos()
-#obter_proposicoes(ano)
+obter_proposicoes(ano)
 
 #CHECA OS DEPUTADOS
 #
-#limpar_votos()
-#checa_proposicoes()
-#checa_deputado()
-#baixa_fotos()
+limpar_votos()
+checa_proposicoes()
+checa_deputado()
+baixa_fotos()
 #print("AGORA NÃO SE ESQUEÇA DE COLOCAR A EXPLICAÇÃO PARA AS VOTAÇÕES")
 
 #GERA SAÍDA E COMPACTA
 #
-#pega_deputados_atuais()
+pega_deputados_atuais()
 gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
-#calcula_historico()
-#junta_variancia()
+calcula_historico()
+junta_variancia()
 
 compactar_arquivos()
 
