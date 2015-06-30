@@ -165,6 +165,7 @@ def pega_dados_API_proposicao(prop):
     prop["tipo"] = bs.proposicao["tipo"].strip()
     prop["numero"] = bs.proposicao["numero"]
     prop["ano"] = bs.proposicao["ano"]
+    prop["explicacao"] = bs.find("explicacaoementa").string
     # pega apenas a nova ementa nas proposições
     # em que ela tiver sido atualizada
     if "NOVA EMENTA:" in bs.ementa.string:
@@ -315,6 +316,9 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
                     if votacao["codigo"] not in prop_antigas:
                         #se existe orientação do governo
                         if votacao["orientacao_governo"] in ["Sim","Não"]:
+                            #transforma a "linguagem comum" na ementa se ela não ouver
+                            if proposicao["explicacao"] in ('\n',''):
+                                proposicao["explicacao"] = proposicao["ementa"]
                             prop_antigas.append(votacao["codigo"])
                             contador += 1
                             escreve_prop.writerow([votacao["codigo"],
@@ -325,7 +329,8 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
                                                    proposicao["numero"],
                                                    proposicao["ano"],
                                                    proposicao["ementa"],
-                                                   votacao["resumo"]])
+                                                   votacao["resumo"],
+                                                  proposicao["explicacao"]])
 
                             #loop para adicionar uma linha para cada
                             # deputado no arquivo de votos
@@ -1451,6 +1456,16 @@ def analisa_votacoes():
 
     props.to_csv("orien.csv",index=False)
 
+def move_arquivo_basometro():
+    import os
+    import shutil
+    pai = os.getcwd()
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    shutil.copy(mandato+"/"+mandato+"_camara.json",pai+"/basometro/dados/")
+    print("Arquivo enviado para "+pai+"/basometro/dados/")
+
 path = os.path.dirname(os.path.abspath(__file__))
 
 #variaveis globais e chamada necessária
@@ -1474,11 +1489,14 @@ descompactar_arquivos()
 #GERA SAÍDA
 #
 #pega_deputados_atuais()
-gera_json_basometro()
+#gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
 #calcula_historico()
 #junta_variancia()
+
+#MOVE ARQUIVOS
+move_arquivo_basometro()
 
 #OUTROS COMANDOS
 #
