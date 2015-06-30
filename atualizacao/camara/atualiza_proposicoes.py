@@ -1459,12 +1459,27 @@ def analisa_votacoes():
 def move_arquivo_basometro():
     import os
     import shutil
+
+    #acha o path do basometro
     pai = os.getcwd()
     pai = os.path.abspath(os.path.join(pai, os.pardir))
     pai = os.path.abspath(os.path.join(pai, os.pardir))
     pai = os.path.abspath(os.path.join(pai, os.pardir))
+
+    #copia o json dos dados e do histórico
     shutil.copy(mandato+"/"+mandato+"_camara.json",pai+"/basometro/dados/")
-    print("Arquivo enviado para "+pai+"/basometro/dados/")
+    shutil.copy(mandato+"/hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json",pai+"/basometro/dados/")
+
+    #vê quais fotos têm no basômetro e quais novas que pegamos que não estão lá. e move
+    fotos_ja_temos = [ f for f in os.listdir(pai+"/basometro/images/fotos/") if os.path.isfile(os.path.join(pai+"/basometro/images/fotos/",f)) ]
+    fotos_no_mandato_atual = [ f for f in os.listdir(mandato+"/fotos/") if os.path.isfile(os.path.join(mandato+"/fotos/",f)) ]
+    i = 0
+    for f in fotos_no_mandato_atual:
+        if f not in fotos_ja_temos:
+            shutil.copy(mandato+"/fotos/"+f,pai+"/basometro/images/fotos/")
+            i+= 1
+
+    print("Arquivos enviados para "+pai+"/basometro/dados, junto com "+str(i)+" fotos")
 
 path = os.path.dirname(os.path.abspath(__file__))
 
