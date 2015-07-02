@@ -478,7 +478,7 @@ def pega_arquivos():
     props = []
     votos = []
     path = os.path.dirname(os.path.abspath(__file__))
-    with open(path+"/atualizacao/camara/proposicoes.csv", "r") as prop, open(path+"/atualizacao/camara/votos.csv", "r") as voto:
+    with open(path+"atualizacao/camara/proposicoes.csv", "r") as prop, open(path+"atualizacao/camara/votos.csv", "r") as voto:
 
         arquivo_prop = csv.reader(prop,delimiter = ";")
         next(arquivo_prop, None)  # ignora o cabeçalho
@@ -645,7 +645,7 @@ def acha_meses(datas):
 def calcula_historico():
 
     #pega arquivo de proposições e conserta maiúsculas/minúsculas/acento
-    props = read_csv(path+mandato+"/proposicoes.csv",sep=";")
+    props = read_csv(path+"proposicoes.csv",sep=";")
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
 
     #transforma as datas em string e coloca zero na frente dos anos que perderam esse zero
@@ -659,7 +659,7 @@ def calcula_historico():
     meses = acha_meses(datas)
 
     #pega arquivo de votos e retira abstenções e presidente
-    votos = read_csv(path+mandato+"/votos.csv",sep=";")
+    votos = read_csv(path+"votos.csv",sep=";")
     votos = votos[votos.VOTO != 'ABSTENCAO']
     votos = votos[votos.VOTO != 'PRESIDENTE']
     votos['VOTO'] = votos['VOTO'].apply(conserta_voto)
@@ -786,7 +786,7 @@ def calcula_historico():
                 saida[partido].append(item)
 
     #escreve Json de saída
-    with open (path+mandato+"/hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as jsonfile:
+    with open (path+"hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json","w",encoding='UTF8') as jsonfile:
         jsonfile.write(json.dumps(saida))
     print("Histórico do mandato " + mandato + " salvo")
 
@@ -817,7 +817,7 @@ def calcula_historico():
             item["fidelidade_lider"] = fidelidade_lider
             aux_variancia.append(item)
 
-    with open (path+mandato+"/variancia_"+mandato+"_camara.json","w",encoding='UTF8') as jsonfile:
+    with open (path+"variancia_"+mandato+"_camara.json","w",encoding='UTF8') as jsonfile:
         jsonfile.write(json.dumps(aux_variancia))
     print("JSON da variância do mandato " + mandato + " salvo")
 
@@ -889,7 +889,7 @@ def calcula_historico():
             item["fidelidade_lider"] = fidelidade_lider
             aux_variancia.append(item)
 
-    with open (path+mandato+"/variancia_"+mandato+"_camara_mes.json","w",encoding='UTF8') as jsonfile:
+    with open (path+"variancia_"+mandato+"_camara_mes.json","w",encoding='UTF8') as jsonfile:
         jsonfile.write(json.dumps(aux_variancia))
     print("JSON da variância do mandato " + mandato + " sem média móvel salvo")
 
@@ -965,7 +965,7 @@ def matriz_semelhanca(mandato):
     path = os.path.dirname(os.path.abspath(__file__))
 
     #pega arquivo de votos e retira abstenções, obstruções e presidente
-    votos = read_csv(path+"/atualizacao/camara/"+mandato+"/votos.csv.bz2",sep=";",compression = 'bz2')
+    votos = read_csv(path+"atualizacao/camara/"+mandato+"/votos.csv.bz2",sep=";",compression = 'bz2')
     votos = votos[votos.VOTO != 'ABSTENCAO']
     votos = votos[votos.VOTO != 'OBSTRUCAO']
     votos = votos[votos.VOTO != 'PRESIDENTE']
@@ -987,15 +987,15 @@ def matriz_semelhanca(mandato):
     semelhanca = calcula_semelhanca(votacoes)
 
     saida = DataFrame.from_dict(semelhanca)
-    saida.to_csv(path+"/matriz_semelhanca.csv")
+    saida.to_csv(path+"matriz_semelhanca.csv")
 
 def saida_indice_rice(mandato):
-    props = read_csv(path+mandato+"/proposicoes.csv",sep=";")
+    props = read_csv(path+"proposicoes.csv",sep=";")
     props = props.head(24) #só as 23 primeiras, para ficar igual à quantidade de votacoes de dilma2
     props["ORIENTACAO_GOVERNO"] = props["ORIENTACAO_GOVERNO"].apply(conserta_voto)
 
     #pega arquivo de votos e retira abstenções e presidente
-    votos = read_csv(path+mandato+"/votos.csv",sep=";")
+    votos = read_csv(path+"votos.csv",sep=";")
     votos = votos[votos.VOTO != 'ABSTENCAO']
     votos = votos[votos.VOTO != 'PRESIDENTE']
 
@@ -1035,10 +1035,10 @@ def traduz_partido(partido):
 
 def limpar_votos():
 
-    votos = read_csv(path+mandato+"/votos.csv",sep=";", dtype=object)
-    props = read_csv(path+mandato+"/proposicoes.csv",sep=";",dtype=object)
+    votos = read_csv(path+"votos.csv",sep=";", dtype=object)
+    props = read_csv(path+"proposicoes.csv",sep=";",dtype=object)
     try:
-        politicos = read_csv(path+mandato+"/deputados.csv",sep=";")
+        politicos = read_csv(path+"deputados.csv",sep=";")
     except OSError: #se não houver arquivo de deputados, cria um DF vazio
         colunas = ['POLITICO', 'NOME_CASA','PARTIDO',"UF",'ID',"ANO_MANDATO","LEGISLATURA","URL_FOTO"]
         politicos = DataFrame(columns=colunas)
@@ -1054,9 +1054,9 @@ def limpar_votos():
     props = props[props.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
 
     #salva os arquivos
-    votos.to_csv(path+mandato+"/votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-    props.to_csv(path+mandato+"/proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
-    politicos.to_csv(path+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    votos.to_csv(path+"votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    props.to_csv(path+"proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    politicos.to_csv(path+"deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def conserta_politico(politico):
     traducao = {
@@ -1076,8 +1076,8 @@ def conserta_politico(politico):
     return traducao[politico] if politico in traducao else politico
 
 def checa_deputado():
-    votos = read_csv(path+mandato+"/votos.csv",sep=";")
-    politicos = read_csv(path+mandato+"/deputados.csv",sep=";")
+    votos = read_csv(path+"votos.csv",sep=";")
+    politicos = read_csv(path+"deputados.csv",sep=";")
 
     lista_politicos = []
     partido = {} #aqui é para guardar o partido de cada político
@@ -1163,11 +1163,11 @@ def adiciona_deputados(lista_deputados,politicos,partido):
             politicos = politicos.append(deputado,ignore_index=True)
             print("Político adicionado: "+deputado["NOME_CASA"])
 
-    politicos.to_csv(path+mandato+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    politicos.to_csv(path+"deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def checa_proposicoes():
-    votos = read_csv(path+mandato+"/votos.csv",sep=";")
-    props = read_csv(path+mandato+"/proposicoes.csv",sep=";")
+    votos = read_csv(path+"votos.csv",sep=";")
+    props = read_csv(path+"proposicoes.csv",sep=";")
     for p in list(props["ID_VOTACAO"]):
         if not (p in list(votos["ID_VOTACAO"])):
             print("Essa votação está no arquivo de votações mas não no de votos")
@@ -1179,7 +1179,7 @@ def checa_proposicoes():
 
 def deputados_hoje():
 #    url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
-    url = "file://"+path+"/Deputados.xml"
+    url = "file://"+path+"Deputados.xml"
     dados = BeautifulSoup(urlopen(url).read())
     deputados = dados.findAll("deputado")
     print(len(deputados))
@@ -1202,11 +1202,11 @@ def baixa_fotos():
     #Comente a parte do código que você não for usar
 
     #cria diretório paras as fotos, se não houver
-    if not os.path.isdir(path+mandato+"/fotos"):
+    if not os.path.isdir(path+"fotos"):
         print("Criando diretório para as fotos")
         os.system("mkdir "+mandato+"/fotos")
 
-    politicos = read_csv(path+mandato+"/deputados.csv",sep=";",dtype={'ID': 'str',"ANO_MANDATO":'str',"LEGISLATURA":'str'})
+    politicos = read_csv(path+"deputados.csv",sep=";",dtype={'ID': 'str',"ANO_MANDATO":'str',"LEGISLATURA":'str'})
 
     #pega fotos antigas
     '''politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
@@ -1215,7 +1215,7 @@ def baixa_fotos():
     for codigo in links:
         if links[codigo] != "sem_foto.jpg":
             try:
-                urllib.request.urlretrieve(links[codigo], path+mandato+"/fotos/dep_"+codigo+".jpg")
+                urllib.request.urlretrieve(links[codigo], path+"fotos/dep_"+codigo+".jpg")
                 politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "dep_"+codigo+".jpg"
                 print(links[codigo])
             except (urllib.error.HTTPError):
@@ -1245,7 +1245,7 @@ def baixa_fotos():
                 print("Não encontrou foto de: "+dep)
 
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
-    politicos.to_csv(path+"/deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
+    politicos.to_csv(path+"deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def junta_variancia():
     mandatos = ["lula1","lula2","dilma1","dilma2"]
@@ -1467,16 +1467,16 @@ def move_arquivo_basometro():
     pai = os.path.abspath(os.path.join(pai, os.pardir))
 
     #copia o json dos dados e do histórico
-    shutil.copy(path+mandato+"/"+mandato+"_camara.json",pai+"/basometro/dados/")
-    shutil.copy(path+mandato+"/hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json",pai+"/basometro/dados/")
+    shutil.copy(path+""+mandato+"_camara.json",pai+"/basometro/dados/")
+    shutil.copy(path+"hist_"+mandato[:-1]+"_camara_"+mandato[-1]+".json",pai+"/basometro/dados/")
 
     #vê quais fotos têm no basômetro e quais novas que pegamos que não estão lá. e move
     fotos_ja_temos = [ f for f in os.listdir(pai+"/basometro/images/fotos/") if os.path.isfile(os.path.join(pai+"/basometro/images/fotos/",f)) ]
-    fotos_no_mandato_atual = [ f for f in os.listdir(path+mandato+"/fotos/") if os.path.isfile(os.path.join(path+mandato+"/fotos/",f)) ]
+    fotos_no_mandato_atual = [ f for f in os.listdir(path+"fotos/") if os.path.isfile(os.path.join(path+"fotos/",f)) ]
     i = 0
     for f in fotos_no_mandato_atual:
         if f not in fotos_ja_temos:
-            shutil.copy(path+mandato+"/fotos/"+f,pai+"/basometro/images/fotos/")
+            shutil.copy(path+"fotos/"+f,pai+"/basometro/images/fotos/")
             i+= 1
 
     print("Arquivos enviados para "+pai+"/basometro/dados, junto com "+str(i)+" fotos")
