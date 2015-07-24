@@ -1461,7 +1461,8 @@ def move_arquivo_basometro():
     import shutil
 
     #acha o path do basometro
-    pai = os.getcwd()
+    pai = path
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
     pai = os.path.abspath(os.path.join(pai, os.pardir))
     pai = os.path.abspath(os.path.join(pai, os.pardir))
     pai = os.path.abspath(os.path.join(pai, os.pardir))
@@ -1483,14 +1484,14 @@ def move_arquivo_basometro():
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-#variaveis globais e chamada necessária
+#varsiaveis globais e chamada necessária
 ano = 2015
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
 #ATUALIZA O BASOMETRO
 #
-#descompactar_arquivos()
+descompactar_arquivos()
 obter_proposicoes(ano)
 
 #CHECA OS DEPUTADOS
