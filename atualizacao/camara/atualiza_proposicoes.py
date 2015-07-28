@@ -41,14 +41,16 @@ def media_melhor(vetor):
 
 
 def traduz_nome(txt):
+    import unicodedata
     #remove acentos
-    norm = unicodedata.normalize('NFKD', txt)
+    norm = ''.join((c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn'))
+    norm.replace("'","").replace(".","")
 
     #remove espaços extras
     saida = norm.strip()
+    saida = " ".join(saida.split())
 
     return saida
-
 
 def existe_arquivo_proposicoes():
     """ Checa se há arquivo de proposicoes no diretório local. se houver,
@@ -222,7 +224,7 @@ def pega_dados_API_votacoes(proposicao):
                     voto = {}
                     #testa e pega dados das votações
                     voto["idecadastro"] = voto_["idecadastro"]
-                    voto["nome"] = voto_["nome"]
+                    voto["nome"] = conserta_politico(voto_["nome"])
                     voto["voto"] = voto_["voto"].strip()
                     voto["partido"] = voto_["partido"].strip()
                     votacao["votos"].append(voto)
@@ -402,7 +404,7 @@ def pega_deputados_atuais():
     deputados_atuais = [conserta_politico(deputado.findAll("nomeparlamentar")[0].string) for deputado in bs.findAll("deputado")]
     with open(path + "deputados_atuais.csv", 'w') as f:
         for dep in deputados_atuais:
-            f.write(dep)
+            f.write(conserta_politico(dep))
             f.write('\n')
 
 
@@ -1053,6 +1055,25 @@ def limpar_votos():
     votos = votos[votos.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
     props = props[props.ID_VOTACAO != "dd36cd4acaa5bf214f0e107c5ab0ec57"]
 
+    #transforma tudo q possivel em inteiro
+    for col in props.columns:
+        try:
+            props[col] = props[col].apply(int)
+        except:
+            pass
+
+    for col in votos.columns:
+        try:
+            votos[col] = votos[col].apply(int)
+        except:
+            pass
+
+    for col in politicos.columns:
+        try:
+            politicos[col] = politicos[col].apply(int)
+        except:
+            pass
+
     #salva os arquivos
     votos.to_csv(path+"votos.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
     props.to_csv(path+"proposicoes.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
@@ -1069,9 +1090,10 @@ def conserta_politico(politico):
         "JOAO MARCELO":"JOAO MARCELO SOUZA",
         "CHICO D ANGELO":"CHICO D'ANGELO",
         "JOAO MARCELO SOUZA":"JOÃO MARCELO SOUZA",
-        "MARIO NEGROMONTE JR.":"MÁRIO NEGROMONTE JR."
+        "MARIO NEGROMONTE JR.":"MÁRIO NEGROMONTE JR.",
+        "ABEL SALVADOR MESQUITA JUNIOR":"ABEL MESQUITA JR."
     }
-    politico = politico.upper()
+    politico = traduz_nome(politico.upper())
 
     return traducao[politico] if politico in traducao else politico
 
@@ -1123,7 +1145,7 @@ def adiciona_deputados(lista_deputados,politicos,partido):
         for i in deputados:
             dep = conserta_politico(i.nomeparlamentar.string)
             if (dep == d): #se esse deputado estiver no site
-                deputado["POLITICO"] = i.nomeparlamentar.string
+                deputado["POLITICO"] = conserta_politico(i.nomeparlamentar.string)
                 deputado["NOME_CASA"] = dep
                 deputado["PARTIDO"] = i.partido.string
                 deputado["UF"] = i.uf.string
@@ -1137,7 +1159,7 @@ def adiciona_deputados(lista_deputados,politicos,partido):
             for i in deputados2:
                 dep = conserta_politico(i.nomeparlamentar.string)
                 if (dep == d):
-                    deputado["POLITICO"] =  i.nomeparlamentar.string
+                    deputado["POLITICO"] =  conserta_politico(i.nomeparlamentar.string)
                     deputado["NOME_CASA"] = dep
                     deputado["PARTIDO"] = i.legendapartidoeleito.string
                     deputado["UF"] = i.ufeleito.string
@@ -1150,7 +1172,7 @@ def adiciona_deputados(lista_deputados,politicos,partido):
 
         if not deputado:
             print("Erro no deputado: "+d)
-            deputado["POLITICO"] = d
+            deputado["POLITICO"] = conserta_politico(d)
             deputado["NOME_CASA"] = d
             deputado["PARTIDO"] = partido[d]
             deputado["UF"] = "NA"
@@ -1209,7 +1231,7 @@ def baixa_fotos():
     politicos = read_csv(path+"deputados.csv",sep=";",dtype={'ID': 'str',"ANO_MANDATO":'str',"LEGISLATURA":'str'})
 
     #pega fotos antigas
-    '''politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
+    politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos["ID"] = politicos["ID"].apply(str)
     links = Series(politicos.URL_FOTO.values,index=politicos.ID).to_dict()
     for codigo in links:
@@ -1219,12 +1241,15 @@ def baixa_fotos():
                 politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "dep_"+codigo+".jpg"
                 print(links[codigo])
             except (urllib.error.HTTPError):
-                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"'''
+                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"
 
     #descobre o nome de deputados que estão sem foto
     deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
     deps_sem_foto = list(deps_sem_foto["NOME_CASA"])
-    deps_sem_foto2 = politicos[politicos.URL_FOTO == "sem_foto.jpg"]
+    try:
+        deps_sem_foto2 = politicos[politicos.URL_FOTO == "sem_foto.jpg"]
+    except TypeError:
+        deps_sem_foto2 = politicos[politicos.URL_FOTO.isnull]
     deps_sem_foto = deps_sem_foto + list(deps_sem_foto2["NOME_CASA"])
 
     print("***** Deputados sem foto ******")
@@ -1482,6 +1507,19 @@ def move_arquivo_basometro():
 
     print("Arquivos enviados para "+pai+"/basometro/dados, junto com "+str(i)+" fotos")
 
+def atualiza():
+    descompactar_arquivos()
+    obter_proposicoes(ano)
+    limpar_votos()
+    checa_proposicoes()
+    checa_deputado()
+    baixa_fotos()
+    pega_deputados_atuais()
+    gera_json_basometro()
+    calcula_historico()
+    move_arquivo_basometro()
+    compactar_arquivos()
+
 path = os.path.dirname(os.path.abspath(__file__))
 
 #varsiaveis globais e chamada necessária
@@ -1491,28 +1529,28 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
 #ATUALIZA O BASOMETRO
 #
-descompactar_arquivos()
-obter_proposicoes(ano)
+#descompactar_arquivos()
+#obter_proposicoes(ano)
 
 #CHECA OS DEPUTADOS
 #
-limpar_votos()
-checa_proposicoes()
-checa_deputado()
-baixa_fotos()
+#limpar_votos()
+#checa_proposicoes()
+#checa_deputado()
+#baixa_fotos()
 #print("AGORA NÃO SE ESQUEÇA DE COLOCAR A EXPLICAÇÃO PARA AS VOTAÇÕES")
 
 #GERA SAÍDA
 #
-pega_deputados_atuais()
-gera_json_basometro()
+#pega_deputados_atuais()
+#gera_json_basometro()
 
 #HISTÓRICO E VARIANCIA
-calcula_historico()
+#calcula_historico()
 #junta_variancia()
 
 #MOVE ARQUIVOS
-move_arquivo_basometro()
+#move_arquivo_basometro()
 
 #OUTROS COMANDOS
 #
@@ -1520,4 +1558,8 @@ move_arquivo_basometro()
 
 #analisa_votacoes()
 
-compactar_arquivos()
+#compactar_arquivos()
+
+####################
+#PARA RODAR NO SERVIDOR
+atualiza()
