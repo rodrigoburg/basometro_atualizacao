@@ -1231,9 +1231,10 @@ def baixa_fotos():
     politicos = read_csv(path+"deputados.csv",sep=";",dtype={'ID': 'str',"ANO_MANDATO":'str',"LEGISLATURA":'str'})
 
     #pega fotos antigas
-    politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
+    '''politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos["ID"] = politicos["ID"].apply(str)
     links = Series(politicos.URL_FOTO.values,index=politicos.ID).to_dict()
+    print(links)
     for codigo in links:
         if links[codigo] != "sem_foto.jpg":
             try:
@@ -1241,7 +1242,7 @@ def baixa_fotos():
                 politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "dep_"+codigo+".jpg"
                 print(links[codigo])
             except (urllib.error.HTTPError):
-                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"
+                politicos.loc[politicos.ID == codigo,"URL_FOTO"] = "sem_foto.jpg"'''
 
     #descobre o nome de deputados que estão sem foto
     deps_sem_foto = politicos[politicos.URL_FOTO.isnull()]
@@ -1254,6 +1255,7 @@ def baixa_fotos():
 
     print("***** Deputados sem foto ******")
     print(deps_sem_foto)
+
     #pega fotos novas
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
