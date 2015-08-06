@@ -1509,6 +1509,23 @@ def move_arquivo_basometro():
 
     print("Arquivos enviados para "+pai+"/basometro/dados, junto com "+str(i)+" fotos")
 
+
+def move_arquivo_coesao():
+    import os
+    import shutil
+
+    #acha o path do basometro
+    pai = path
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+
+    #copia o json dos dados e do histórico
+    shutil.copy("variancia_camara.json",pai+"/coesao/data/")
+
+    print("Arquivos enviados para o gráfico da coesão/variância")
+
 def atualiza():
     descompactar_arquivos()
     obter_proposicoes(ano)
@@ -1519,7 +1536,9 @@ def atualiza():
     pega_deputados_atuais()
     gera_json_basometro()
     calcula_historico()
+    junta_variancia()
     move_arquivo_basometro()
+    move_arquivo_coesao()
     compactar_arquivos()
 
 path = os.path.dirname(os.path.abspath(__file__))
