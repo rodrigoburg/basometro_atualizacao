@@ -54,6 +54,15 @@ def traduz_nome(txt):
         return traducao[saida]
     else:
         return saida
+def acha_linguagem_comum(codigo):
+    url = "http://legis.senado.gov.br/dadosabertos/materia/"+codigo
+    bs = BeautifulSoup(urlopen(url).read())
+    try:
+        saida = bs.find("materia").find("dadosbasicosmateria").find("explicacaoementamateria").string
+    except AttributeError:
+        saida = bs.find("materia").find("dadosbasicosmateria").find("ementamateria").string
+
+    return saida
 
 def busca_novas_proposicoes(datas,prop_antigas):
     contador = 0
@@ -84,6 +93,7 @@ def busca_novas_proposicoes(datas,prop_antigas):
                 if codigo not in prop_antigas:
                     #se a votação não é secreta:
                     if v.secreta.string != 'S':
+
                         voto = {}
                         voto["codigo"] = codigo
                         voto["data"] = d[2:]
@@ -94,6 +104,7 @@ def busca_novas_proposicoes(datas,prop_antigas):
                         voto["ano"] = v.anomateria.string
                         voto["ementa"] = consulta_ementa(v.codigomateria.string)
                         voto["o que foi votado"] = v.descricaovotacao.string.replace("\"","\'").strip()
+                        voto["linguagem_comum"] = acha_linguagem_comum(v.codigomateria.string)
                         voto["politicos"] = []
                         voto["votos"] = []
                         voto["partidos"] = []
@@ -245,7 +256,7 @@ def escreve_resultado(v):
                 v["ano"],
                 v["ementa"],
                 v["o que foi votado"],
-                ""
+                v["linguagem_comum"]
                 ])
 
             #escreve no arquivo de votos
@@ -443,6 +454,17 @@ def baixa_fotos():
     politicos.loc[politicos.URL_FOTO.isnull(),"URL_FOTO"] = "sem_foto.jpg"
     politicos.to_csv(path+"senadores.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
+def acha_data_hoje():
+    import time
+    return time.strftime("%d%m%Y")
+
+def acha_data_anterior():
+    votacoes = read_csv(path + 'senado_votacoes.csv',sep=";")
+    datas = list(votacoes["DATA"])
+    datas.sort(reverse=True)
+    saida = datetime.strptime(str(datas[0]), "%y%m%d").date()
+    return saida.strftime("%d%m%Y")
+
 
 def descompactar_arquivos():
     os.system("bunzip2 "+path+"*.bz2")
@@ -451,20 +473,60 @@ def descompactar_arquivos():
 def compactar_arquivos():
     os.system("bzip2 -9 "+path+"*.csv")
 
+def move_arquivo_basometro():
+    import os
+    import shutil
+
+    #acha o path do basometro
+    pai = path
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+
+    #copia o json dos dados e do histórico
+    shutil.copy(path+""+mandato+"_senado.json",pai+"/basometro/dados/")
+
+    #vê quais fotos têm no basômetro e quais novas que pegamos que não estão lá. e move
+    fotos_ja_temos = [ f for f in os.listdir(pai+"/basometro/images/fotos/") if os.path.isfile(os.path.join(pai+"/basometro/images/fotos/",f)) ]
+    fotos_no_mandato_atual = [ f for f in os.listdir(path+"fotos/") if os.path.isfile(os.path.join(path+"fotos/",f)) ]
+    i = 0
+    for f in fotos_no_mandato_atual:
+        if f not in fotos_ja_temos:
+            shutil.copy(path+"fotos/"+f,pai+"/basometro/images/fotos/")
+            i+= 1
+
+    print("Arquivos enviados para "+pai+"/basometro/dados, junto com "+str(i)+" fotos")
+
+def atualiza():
+    descompactar_arquivos()
+    data_anterior = acha_data_anterior()
+    data_hoje = acha_data_hoje()
+    atualiza_votacoes(data_anterior,data_hoje)
+    limpar_votos()
+    testa_voto()
+    baixa_fotos()
+    gera_json_basometro()
+    move_arquivo_basometro()
+    compactar_arquivos()
+
 legislaturas = ["54","55","56"]
 
 mandato = "dilma2"
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
 
-descompactar_arquivos()
-#atualiza_votacoes("30052015","30062015")
-
+#descompactar_arquivos()
+#data_anterior = acha_data_anterior()
+#data_hoje = acha_data_hoje()
+#atualiza_votacoes(data_anterior,data_hoje)
 #limpar_votos()
 #testa_voto()
 #baixa_fotos()
 #print("NAO ESQUECA DE DSCREVER AS VOTACOES")
+#gera_json_basometro()
+#compactar_arquivos()
 
-gera_json_basometro()
-compactar_arquivos()
+atualiza()
+
 
