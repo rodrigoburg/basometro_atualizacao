@@ -1571,7 +1571,7 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
 #HISTÓRICO E VARIANCIA
 #calcula_historico()
-junta_variancia()
+#junta_variancia()
 
 #MOVE ARQUIVOS
 #move_arquivo_basometro()
@@ -1586,4 +1586,4 @@ junta_variancia()
 
 ####################
 #PARA RODAR NO SERVIDOR
-#atualiza()
+atualiza()
