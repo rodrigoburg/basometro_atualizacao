@@ -1275,6 +1275,9 @@ def baixa_fotos():
     politicos.to_csv(path+"deputados.csv",sep=";",index=False, quoting=csv.QUOTE_ALL)
 
 def junta_variancia():
+    pai = path
+    pai = os.path.abspath(os.path.join(pai, os.pardir))
+
     mandatos = ["lula1","lula2","dilma1","dilma2"]
     variaveis = ["governismo","dispersao","num_deputados","rice","fidelidade_lider"]
     partidos = {}
@@ -1282,7 +1285,7 @@ def junta_variancia():
     #variável que vai ser usada para expostar os dados em formato CSV para consulta visual
 
     for m in mandatos:
-        with open(m+'/variancia_'+m+'_camara.json') as json_data:
+        with open(pai+"/"+m+'/variancia_'+m+'_camara.json') as json_data:
             temp = json.load(json_data)
             for partido in temp:
                 sigla = partido["name"]
@@ -1568,7 +1571,7 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
 #HISTÓRICO E VARIANCIA
 #calcula_historico()
-#junta_variancia()
+junta_variancia()
 
 #MOVE ARQUIVOS
 #move_arquivo_basometro()
@@ -1583,4 +1586,4 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
 ####################
 #PARA RODAR NO SERVIDOR
-atualiza()
+#atualiza()
