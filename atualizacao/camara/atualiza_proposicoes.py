@@ -1250,7 +1250,7 @@ def baixa_fotos():
     try:
         deps_sem_foto2 = politicos[politicos.URL_FOTO == "sem_foto.jpg"]
     except TypeError:
-        deps_sem_foto2 = politicos[politicos.URL_FOTO.isnull]
+        deps_sem_foto2 = politicos[politicos.URL_FOTO.isnull()]
     deps_sem_foto = deps_sem_foto + list(deps_sem_foto2["NOME_CASA"])
 
     print("***** Deputados sem foto ******")
@@ -1342,9 +1342,9 @@ def junta_variancia():
     saida_csv.to_csv("dispersao.csv")
 
     #agora mais uns calculinhos pra ferramenta sem a média_móvel
-    partidos = {}
-    for m in mandatos:
-        with open(m+'/variancia_'+m+'_camara_mes.json') as json_data:
+    ''''partidos = {}
+    formato m in mandatos:
+        with open(pai+'/'+m+'/variancia_'+m+'_camara_mes.json') as json_data:
             temp = json.load(json_data)
             for partido in temp:
                 sigla = partido["name"]
@@ -1367,9 +1367,10 @@ def junta_variancia():
 
         saida.append(item)
 
-    with open ("variancia_camara_mes.json","w",encoding='UTF8') as jsonfile:
+    with open ("variancia_camara_mes.json","w",encoding='UTF:wq
+    8') as jsonfile:
         jsonfile.write(json.dumps(saida))
-    print("JSON da variância total sem média móvel salvo")
+    print("JSON da variância total sem média móvel salvo")'''
 
 def pega_orientacoes():
     with open(path+"orientacoes.csv","r") as file:
