@@ -1,6 +1,3 @@
-#-*- coding: utf-8 -*-
-#!/usr/bin/python3
-
 import csv
 from datetime import datetime
 from pandas import DataFrame

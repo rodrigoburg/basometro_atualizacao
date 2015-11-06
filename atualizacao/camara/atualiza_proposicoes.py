@@ -1102,24 +1102,30 @@ def checa_deputado():
     politicos = read_csv(path+"deputados.csv",sep=";")
 
     lista_politicos = []
-    partido = {} #aqui é para guardar o partido de cada político
+    partidos = {} #aqui é para guardar o partido de cada político
 
-    for p in votos["POLITICO"]:
-        if p not in list(politicos["NOME_CASA"]):
-            lista_politicos.append(p)
-            if p not in partido:
-                sigla = list(votos[votos.POLITICO == p]["PARTIDO"])
-                partido[p] = sigla[0]
+    #vamos criar uma variavel nova, que será o nome do candidato_partido, para pegar assim pessoas q mudaram de partido na legislatura atual
+    votos['POLITICO_PARTIDO'] = votos.apply(lambda t:t["POLITICO"]+"_"+t["PARTIDO"],axis=1)
+    politicos['POLITICO_PARTIDO'] = politicos.apply(lambda t:t["NOME_CASA"]+"_"+t["PARTIDO"],axis=1)
+
+    for p in votos["POLITICO_PARTIDO"]:
+        if p not in list(politicos["POLITICO_PARTIDO"]):
+            politico, partido = p.split("_")
+            lista_politicos.append(politico)
+            partidos[politico] = partido
+
+    #deleta a coluna para ela nao ser salva no arquivo final
+    del politicos['POLITICO_PARTIDO']
 
     lista_politicos = list(set(lista_politicos))
 
     print("ERRO EM: "+str(len(lista_politicos))+" POLÍTICOS")
 
-    print(partido.keys())
+    print(partidos.keys())
     if lista_politicos:
-        adiciona_deputados(lista_politicos,politicos,partido)
+        adiciona_deputados(lista_politicos,politicos,partidos)
 
-def adiciona_deputados(lista_deputados,politicos,partido):
+def adiciona_deputados(lista_deputados,politicos,partidos):
     #url principal e dados principais
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     dados = BeautifulSoup(urlopen(url).read())
@@ -1147,7 +1153,7 @@ def adiciona_deputados(lista_deputados,politicos,partido):
             if (dep == d): #se esse deputado estiver no site
                 deputado["POLITICO"] = conserta_politico(i.nomeparlamentar.string)
                 deputado["NOME_CASA"] = dep
-                deputado["PARTIDO"] = i.partido.string
+                deputado["PARTIDO"] = partidos[d]
                 deputado["UF"] = i.uf.string
                 deputado["ID"] = i.idparlamentar.string
                 deputado["ANO_MANDATO"] = "2011"
@@ -1161,7 +1167,7 @@ def adiciona_deputados(lista_deputados,politicos,partido):
                 if (dep == d):
                     deputado["POLITICO"] =  conserta_politico(i.nomeparlamentar.string)
                     deputado["NOME_CASA"] = dep
-                    deputado["PARTIDO"] = i.legendapartidoeleito.string
+                    deputado["PARTIDO"] = partidos[d]
                     deputado["UF"] = i.ufeleito.string
                     deputado["ID"] = i.idecadastro.string if i.idecadastro.string.strip() != "" else cria_id(dep)
                     deputado["LEGISLATURA"] = i.numlegislatura.string
@@ -1174,7 +1180,7 @@ def adiciona_deputados(lista_deputados,politicos,partido):
             print("Erro no deputado: "+d)
             deputado["POLITICO"] = conserta_politico(d)
             deputado["NOME_CASA"] = d
-            deputado["PARTIDO"] = partido[d]
+            deputado["PARTIDO"] = partidos[d]
             deputado["UF"] = "NA"
             deputado["ID"] = cria_id(d)
             deputado["LEGISLATURA"] = "NA"
@@ -1530,6 +1536,48 @@ def move_arquivo_coesao():
 
     print("Arquivos enviados para o gráfico da coesão/variância")
 
+def pega_e_sobe_ementas():
+    import gspread
+    import json
+    from oauth2client.client import SignedJwtAssertionCredentials
+
+    #abre as proposicoes locais e retira as colunas q nao estarao no Google Docs
+    props = read_csv(mandato+"/proposicoes.csv",sep=";")
+    del props["DATA"]
+    del props["HORA"]
+    del props["ORIENTACAO_GOVERNO"]
+    del props["O_QUE_FOI_VOTADO"]
+
+    #conecta usando a key do json
+    json_key = json.load(open('../credentials_basometro.json'))
+    scope = ['https://spreadsheets.google.com/feeds']
+    credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'].encode(), scope)
+    gc = gspread.authorize(credentials)
+
+    #abre a tabela cuja aba é o nome do mandato (ex: dilma2) e transforma-a em um DataFrame
+    sheet = gc.open_by_key('1nxAL1ChPElm_Vv7fsHsUbfbWe040mvg49dWh05haFUE').worksheet(mandato+"_camara")
+    dataframe = DataFrame(sheet.get_all_records())
+
+    #descobrimos se há votacoes a acrescentar na tabela do Google Docs
+    try:
+        votacoes_gdocs = list(dataframe["ID_VOTACAO"])
+    except KeyError: #se não houver nada na tabela, quer dizer que a lista é vazia
+        votacoes_gdocs = []
+    for row in props.iterrows():
+
+        linha = row[1].tolist()
+        linha = ["" if eh_nan(l) else l for l in linha]
+        id = linha[0]
+        if id not in votacoes_gdocs:
+            sheet.append_row(linha)
+            print("Adicionada no Google Drive a votação de código "+id)
+
+def eh_nan(x):
+    try:
+        return math.isnan(x)
+    except TypeError:
+        return False
+
 def atualiza():
     descompactar_arquivos()
     obter_proposicoes(ano)
@@ -1538,6 +1586,7 @@ def atualiza():
     checa_deputado()
     baixa_fotos()
     pega_deputados_atuais()
+    pega_e_sobe_ementas()
     gera_json_basometro()
     calcula_historico()
     junta_variancia()
@@ -1588,3 +1637,5 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 ####################
 #PARA RODAR NO SERVIDOR
 atualiza()
+
+
