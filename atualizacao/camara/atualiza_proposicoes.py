@@ -1597,7 +1597,7 @@ def atualiza():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #varsiaveis globais e chamada necessária
-ano = 2011
+ano = 2015
 mandato = acha_mandato(ano)
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
