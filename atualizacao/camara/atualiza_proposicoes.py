@@ -1542,14 +1542,14 @@ def pega_e_sobe_ementas():
     from oauth2client.client import SignedJwtAssertionCredentials
 
     #abre as proposicoes locais e retira as colunas q nao estarao no Google Docs
-    props = read_csv(mandato+"/proposicoes.csv",sep=";")
+    props = read_csv(path+"proposicoes.csv",sep=";")
     del props["DATA"]
     del props["HORA"]
     del props["ORIENTACAO_GOVERNO"]
     del props["O_QUE_FOI_VOTADO"]
 
     #conecta usando a key do json
-    json_key = json.load(open('../credentials_basometro.json'))
+    json_key = json.load(open(os.path.dirname(os.path.dirname(os.path.dirname(path)))+'/credentials_basometro.json'))
     scope = ['https://spreadsheets.google.com/feeds']
     credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'].encode(), scope)
     gc = gspread.authorize(credentials)
