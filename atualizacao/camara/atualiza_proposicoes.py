@@ -1091,7 +1091,8 @@ def conserta_politico(politico):
         "CHICO D ANGELO":"CHICO D'ANGELO",
         "JOAO MARCELO SOUZA":"JOÃO MARCELO SOUZA",
         "MARIO NEGROMONTE JR.":"MÁRIO NEGROMONTE JR.",
-        "ABEL SALVADOR MESQUITA JUNIOR":"ABEL MESQUITA JR."
+        "ABEL SALVADOR MESQUITA JUNIOR":"ABEL MESQUITA JR.",
+        "WHERLES ROCHA":"ROCHA"
     }
     politico = traduz_nome(politico.upper())
 
