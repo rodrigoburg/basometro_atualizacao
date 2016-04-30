@@ -461,9 +461,12 @@ def acha_data_hoje():
 def acha_data_anterior():
     votacoes = read_csv(path + 'senado_votacoes.csv',sep=";")
     datas = list(votacoes["DATA"])
-    datas.sort(reverse=True)
-    saida = datetime.strptime(str(datas[0]), "%y%m%d").date()
-    return saida.strftime("%d%m%Y")
+    if datas:
+        datas.sort(reverse=True)
+        saida = datetime.strptime(str(datas[0]), "%y%m%d").date()
+        return saida.strftime("%d%m%Y")
+    else:
+        return data_impeachment
 
 
 def descompactar_arquivos():
@@ -512,10 +515,12 @@ def atualiza():
 
 legislaturas = ["54","55","56"]
 
-mandato = "dilma2"
-path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
+#MUDAR AQUI EM CASO DE IMPEACHMENT PLS
+mandato = "dilma2" #"temer1"
 lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
+data_impeachment = "13052016"
 
+path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #descompactar_arquivos()
 #data_anterior = acha_data_anterior()
 #data_hoje = acha_data_hoje()

@@ -314,6 +314,15 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
                     #cria o código para ver se a votação já foi registrada antess
                     data = parse_data_votacao(votacao)
 
+                    #agora testa se o mandato é dilma2 ou temer1. se for, a data_impeachment divide as votacoes de cada
+                    if mandato == "temer1":
+                        if int(data) < int(data_impeachment):
+                            print('pulando!!')
+                            continue 
+                    elif mandato == "dilma2":
+                        if int(data) > int(data_impeachment):
+                            continue
+
                     #se não é repetido
                     if votacao["codigo"] not in prop_antigas:
                         #se existe orientação do governo
@@ -363,13 +372,23 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
 
     print("Foram adicionadas " + str(contador) + " votações no arquivo local, com "+str(repeticoes)+" repeticoes.\n")
 
+def is_int(num):
+    try:
+        num + 1
+        return True
+    except:
+        return False
 
 def obter_proposicoes(ano):
     """obtem todas as proposições votadas em um determinado ano
         articulando as funções anteriores"""
-    ano = str(ano)
+    
+    print("Atualizando proposições de: "+str(ano))
 
-    print("Atualizando proposições de: "+ano)
+    if is_int(ano):
+        ano = str(ano) #no caso do ano ser 2010, 2011, etc...
+    else:
+        ano = ano.split("_")[0] #no caso do ano ser "2016_dilma" ou "2016_temer"
 
     prop_antigas = []
 
@@ -381,7 +400,7 @@ def obter_proposicoes(ano):
     if not existe_arquivo_votos():
         cria_arquivo_vazio_votos()
 
-    proposicoes = pega_todas_proposicoes(ano)
+    proposicoes = pega_todas_proposicoes(ano)    
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
 def acha_mandato(ano):
@@ -391,9 +410,10 @@ def acha_mandato(ano):
         return "lula2"
     elif ano in [2011,2012,2013,2014]:
         return "dilma1"
-    elif ano in [2015,2016,2017,2018]:
+    elif ano in [2015,"2016_dilma"]:
         return "dilma2"
-
+    elif ano == "2016_temer":
+        return "temer1"
 
 def pega_deputados_atuais():
     """Pega a lista de deputados exercendo mandato atualmente"""
@@ -1597,9 +1617,11 @@ def atualiza():
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-#varsiaveis globais e chamada necessária
-ano = 2016
+#varsiaveis globais e chamada necessária - ATUALIZAR AQUI EM CASO DE IMPEACHMENT
+ano = "2016_dilma"
+data_impeachment = "180101" #"160512"
 mandato = acha_mandato(ano)
+
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 
 #ATUALIZA O BASOMETRO
