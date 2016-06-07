@@ -401,11 +401,11 @@ def acha_senador(senadores,politicos):
                 senador = {}
                 senador['POLITICO'] = nome
                 senador['NOME_CASA'] = nome
-                senador['PARTIDO'] = sen.siglapartido.string
-                senador['UF'] = sen.siglauf.string
+                senador['PARTIDO'] = sen.siglapartidoparlamentar.string
+                senador['UF'] = sen.ufparlamentar.string
                 senador['ID'] = sen.codigoparlamentar.string
                 senador['ANO_MANDATO'] = "--"
-                senador['LEGISLATURA'] = sen.legislaturainicio.string + "/" + sen.legislaturafim.string
+                senador['LEGISLATURA'] = l
                 senador['URL_FOTO'] = ""
                 politicos = politicos.append(senador,ignore_index=True)
                 print("Adicionado político: "+nome)
@@ -516,9 +516,9 @@ def atualiza():
 legislaturas = ["54","55","56"]
 
 #MUDAR AQUI EM CASO DE IMPEACHMENT PLS
-mandato = "dilma2" #"temer1"
-lider_governo = "Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
-data_impeachment = "13052016"
+mandato = "temer1"
+lider_governo = "Aloysio Nunes Ferreira" #"Delcídio do Amaral" #"Eduardo Braga" #"Ideli Salvatti" #LIDER DO GOVERNO
+data_impeachment = "12052016"
 
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #descompactar_arquivos()

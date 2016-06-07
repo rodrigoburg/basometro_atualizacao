@@ -134,7 +134,7 @@ def pega_todas_proposicoes(ano):
     url = "http://www.camara.gov.br/SitCamaraWS/Proposicoes.asmx/ListarProposicoesVotadasEmPlenario?ano=" + ano + "&tipo="
     connection = urlopen(url)
     data = connection.read()
-    bs = BeautifulSoup(data)
+    bs = BeautifulSoup(data,"html.parser")
     proposicoes = bs.findAll("proposicao")
     lista_props = []
     for p in proposicoes:
@@ -159,7 +159,7 @@ def pega_dados_API_proposicao(prop):
         try:
             request = Request(url)
             request.add_header('User-agent', 'Mozilla/5.0 (Linux i686)')
-            bs = BeautifulSoup(urlopen(request).read())
+            bs = BeautifulSoup(urlopen(request).read(),"html.parser")
             break
         except urllib.error.HTTPError:
             print("Erro no request da página. Tentando de novo...")
@@ -187,7 +187,7 @@ def pega_dados_API_votacoes(proposicao):
         data = connection.read()
     except:
         return proposicao
-    bs = BeautifulSoup(data)
+    bs = BeautifulSoup(data,"html.parser")
     votacoes = bs.findAll("votacao")
 
     #agora ele pega todas as informações para cada votação ocorrida no ano
@@ -318,9 +318,10 @@ def adiciona_novas_proposicoes(lista_proposicoes, prop_antigas, ano):
                     if mandato == "temer1":
                         if int(data) < int(data_impeachment):
                             print('pulando!!')
-                            continue 
+                            continue
                     elif mandato == "dilma2":
                         if int(data) > int(data_impeachment):
+                            print('pulando!!')
                             continue
 
                     #se não é repetido
@@ -382,7 +383,7 @@ def is_int(num):
 def obter_proposicoes(ano):
     """obtem todas as proposições votadas em um determinado ano
         articulando as funções anteriores"""
-    
+
     print("Atualizando proposições de: "+str(ano))
 
     if is_int(ano):
@@ -400,7 +401,7 @@ def obter_proposicoes(ano):
     if not existe_arquivo_votos():
         cria_arquivo_vazio_votos()
 
-    proposicoes = pega_todas_proposicoes(ano)    
+    proposicoes = pega_todas_proposicoes(ano)
     adiciona_novas_proposicoes(proposicoes, prop_antigas, ano)
 
 def acha_mandato(ano):
@@ -420,7 +421,7 @@ def pega_deputados_atuais():
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     connection = urlopen(url)
     data = connection.read()
-    bs = BeautifulSoup(data)
+    bs = BeautifulSoup(data,"html.parser")
     deputados_atuais = [conserta_politico(deputado.findAll("nomeparlamentar")[0].string) for deputado in bs.findAll("deputado")]
     with open(path + "deputados_atuais.csv", 'w') as f:
         for dep in deputados_atuais:
@@ -1125,18 +1126,27 @@ def checa_deputado():
     lista_politicos = []
     partidos = {} #aqui é para guardar o partido de cada político
 
-    #vamos criar uma variavel nova, que será o nome do candidato_partido, para pegar assim pessoas q mudaram de partido na legislatura atual
-    votos['POLITICO_PARTIDO'] = votos.apply(lambda t:t["POLITICO"]+"_"+t["PARTIDO"],axis=1)
-    politicos['POLITICO_PARTIDO'] = politicos.apply(lambda t:t["NOME_CASA"]+"_"+t["PARTIDO"],axis=1)
-
-    for p in votos["POLITICO_PARTIDO"]:
-        if p not in list(politicos["POLITICO_PARTIDO"]):
+    #checa se temos politicos. se não tiver, vamos atualizar todos. se tivermos, vamos ver os que estão faltando
+    if len(politicos) == 0:
+        votos['POLITICO_PARTIDO'] = votos.apply(lambda t:t["POLITICO"]+"_"+t["PARTIDO"],axis=1)
+        for p in votos["POLITICO_PARTIDO"]:
             politico, partido = p.split("_")
             lista_politicos.append(politico)
             partidos[politico] = partido
 
-    #deleta a coluna para ela nao ser salva no arquivo final
-    del politicos['POLITICO_PARTIDO']
+    else:
+        #vamos criar uma variavel nova, que será o nome do candidato_partido, para pegar assim pessoas q mudaram de partido na legislatura atual
+        votos['POLITICO_PARTIDO'] = votos.apply(lambda t:t["POLITICO"]+"_"+t["PARTIDO"],axis=1)
+        politicos['POLITICO_PARTIDO'] = politicos.apply(lambda t:t["NOME_CASA"]+"_"+t["PARTIDO"],axis=1)
+
+        for p in votos["POLITICO_PARTIDO"]:
+            if p not in list(politicos["POLITICO_PARTIDO"]):
+                politico, partido = p.split("_")
+                lista_politicos.append(politico)
+                partidos[politico] = partido
+
+        #deleta a coluna para ela nao ser salva no arquivo final
+        del politicos['POLITICO_PARTIDO']
 
     lista_politicos = list(set(lista_politicos))
 
@@ -1149,7 +1159,7 @@ def checa_deputado():
 def adiciona_deputados(lista_deputados,politicos,partidos):
     #url principal e dados principais
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
-    dados = BeautifulSoup(urlopen(url).read())
+    dados = BeautifulSoup(urlopen(url).read(),"html.parser")
     deputados = dados.findAll("deputado")
 
     #for d in deputados:
@@ -1162,7 +1172,7 @@ def adiciona_deputados(lista_deputados,politicos,partidos):
     #http://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo/webservices/deputados
 
     url2 = "file://"+path.replace(mandato+"/","")+"Deputados.xml"
-    dados2 = BeautifulSoup(urlopen(url2).read())
+    dados2 = BeautifulSoup(urlopen(url2).read(),"html.parser")
     deputados2 = dados2.findAll("deputado")
 
     #para cada deputado fora do nosso arquivo
@@ -1229,7 +1239,7 @@ def checa_proposicoes():
 def deputados_hoje():
 #    url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
     url = "file://"+path+"Deputados.xml"
-    dados = BeautifulSoup(urlopen(url).read())
+    dados = BeautifulSoup(urlopen(url).read(),"html.parser")
     deputados = dados.findAll("deputado")
     print(len(deputados))
     gabinetes = []
@@ -1285,7 +1295,7 @@ def baixa_fotos():
 
     #pega fotos novas
     url = "http://www.camara.gov.br/SitCamaraWS/Deputados.asmx/ObterDeputados"
-    dados = BeautifulSoup(urlopen(url).read())
+    dados = BeautifulSoup(urlopen(url).read(),"html.parser")
     deputados = dados.findAll("deputado")
     for d in deputados:
         dep = conserta_politico(d.nomeparlamentar.string)
@@ -1618,8 +1628,8 @@ def atualiza():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #varsiaveis globais e chamada necessária - ATUALIZAR AQUI EM CASO DE IMPEACHMENT
-ano = "2016_dilma"
-data_impeachment = "180101" #"160512"
+ano = "2016_temer"
+data_impeachment = "160512"
 mandato = acha_mandato(ano)
 
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
