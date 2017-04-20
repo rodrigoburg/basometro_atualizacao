@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import io
 import unicodedata
 import csv
-from pandas import DataFrame, read_csv, Series
+from pandas import DataFrame, read_csv, Series, rolling_mean
 import os
 import json
 import math
@@ -413,7 +413,7 @@ def acha_mandato(ano):
         return "dilma1"
     elif ano in [2015,"2016_dilma"]:
         return "dilma2"
-    elif ano == "2016_temer":
+    elif ano in ["2016_temer",2017]:
         return "temer1"
 
 def pega_deputados_atuais():
@@ -1315,7 +1315,7 @@ def junta_variancia():
     pai = path
     pai = os.path.abspath(os.path.join(pai, os.pardir))
 
-    mandatos = ["lula1","lula2","dilma1","dilma2"]
+    mandatos = ["lula1","lula2","dilma1","dilma2","temer1"]
     variaveis = ["governismo","dispersao","num_deputados","rice","fidelidade_lider"]
     partidos = {}
 
@@ -1603,6 +1603,54 @@ def pega_e_sobe_ementas():
             sheet.append_row(linha)
             print("Adicionada no Google Drive a votação de código "+id)
 
+def analisa_variancia():
+    with open("variancia_camara.json",'r') as file:
+        dados = json.load(file)
+
+    novos_dados = {}
+
+    for d in dados:
+        novos_dados[d['name']] = {}
+        for item in d['num_deputados']:
+            data = item[0]
+            novos_dados[d['name']][data] = {}
+            novos_dados[d['name']][data]['num_deputados'] = item[1]
+        for item in d['governismo']:    
+            data = item[0]
+            novos_dados[d['name']][data]['governismo'] = item[1]
+        for item in d['dispersao']:    
+            data = item[0]
+            novos_dados[d['name']][data]['dispersao'] = item[1]
+        for item in d['fidelidade_lider']:    
+            data = item[0]
+            novos_dados[d['name']][data]['fidelidade_lider'] = item[1]
+            
+                
+    saida = {}
+    for sigla in novos_dados:     
+        for data in novos_dados[sigla]:
+            if data not in saida:
+                saida[data] = [0,0,0,0]            
+            saida[data][0] += novos_dados[sigla][data]['num_deputados']*novos_dados[sigla][data]['governismo']
+            saida[data][1] += novos_dados[sigla][data]['num_deputados']*novos_dados[sigla][data]['dispersao']
+            if "fidelidade_lider" in novos_dados[sigla][data]:
+                saida[data][2] += novos_dados[sigla][data]['num_deputados']*novos_dados[sigla][data]['fidelidade_lider']            
+            saida[data][3] += novos_dados[sigla][data]['num_deputados']
+            
+
+    saida_real = []
+    for data in saida:
+        item = {"data":data,"governismo":saida[data][0]/saida[data][3],"coesao":saida[data][1]/saida[data][3],"fidelidade_lider":saida[data][2]/saida[data][3]}
+        saida_real.append(item)
+
+    dados = DataFrame(saida_real).sort_values(by="data")    
+    dados.to_csv('gov_coesao_por_mes.csv',index=None)
+
+    dados = rolling_mean(dados,3)
+    print(dados)
+    dados.to_csv('gov_coesao_por_mes_media_movel3.csv',index=None)
+
+
 def eh_nan(x):
     try:
         return math.isnan(x)
@@ -1628,8 +1676,10 @@ def atualiza():
 path = os.path.dirname(os.path.abspath(__file__))
 
 #varsiaveis globais e chamada necessária - ATUALIZAR AQUI EM CASO DE IMPEACHMENT
-ano = "2016_temer"
+ano = 2017
+
 data_impeachment = "160512"
+
 mandato = acha_mandato(ano)
 
 path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
@@ -1655,6 +1705,8 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #HISTÓRICO E VARIANCIA
 #calcula_historico()
 #junta_variancia()
+#move_arquivo_coesao()
+
 
 #MOVE ARQUIVOS
 #move_arquivo_basometro()
@@ -1664,11 +1716,11 @@ path = os.path.dirname(os.path.abspath(__file__))+'/'+mandato+"/"
 #saida_indice_rice(mandato)
 
 #analisa_votacoes()
+#analisa_variancia()
 
 #compactar_arquivos()
 
 ####################
 #PARA RODAR NO SERVIDOR
 atualiza()
-
 
