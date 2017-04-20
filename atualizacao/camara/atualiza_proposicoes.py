@@ -465,10 +465,11 @@ def gera_json_basometro():
         for row in reader:
             if not saida['politicos'][row['POLITICO']]:
                 politicos_nao_encontrados.add(row['POLITICO'])
-            if row['VOTO'] not in TIPOS_DE_VOTOS:
-                votos_com_problema.add(row)
-            voto = [saida['politicos'][row['POLITICO']]['ID'],row['ID_VOTACAO'],row['PARTIDO'],TIPOS_DE_VOTOS[row['VOTO']]]
-            saida['votos'].append(voto)
+            elif row['VOTO'] not in TIPOS_DE_VOTOS:                
+                votos_com_problema.add(row['VOTO'])
+            else:
+                voto = [saida['politicos'][row['POLITICO']]['ID'],row['ID_VOTACAO'],row['PARTIDO'],TIPOS_DE_VOTOS[row['VOTO']]]
+                saida['votos'].append(voto)
 
     if len(politicos_nao_encontrados) > 0:
         print("#############################################")
@@ -1658,19 +1659,19 @@ def eh_nan(x):
         return False
 
 def atualiza():
-    descompactar_arquivos()
-    obter_proposicoes(ano)
-    limpar_votos()
-    checa_proposicoes()
-    checa_deputado()
-    baixa_fotos()
-    pega_deputados_atuais()
-    pega_e_sobe_ementas()
-    gera_json_basometro()
-    calcula_historico()
-    junta_variancia()
-    move_arquivo_basometro()
-    move_arquivo_coesao()
+    #descompactar_arquivos()
+    #obter_proposicoes(ano)
+    #limpar_votos()
+    #checa_proposicoes()
+    #checa_deputado()
+    #baixa_fotos()
+    #pega_deputados_atuais()
+    #pega_e_sobe_ementas()
+    #gera_json_basometro()
+    #calcula_historico()
+    #junta_variancia()
+    #move_arquivo_basometro()
+    #move_arquivo_coesao()
     compactar_arquivos()
 
 path = os.path.dirname(os.path.abspath(__file__))
